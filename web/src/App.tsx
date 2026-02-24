@@ -7,6 +7,8 @@ import PositionManagement from './pages/PositionManagement';
 import RankConfig from './pages/RankConfig';
 import PersonalRadar from './pages/PersonalRadar';
 import TeamRadar from './pages/TeamRadar';
+import RoleManagement from './pages/RoleManagement';
+import RolePermission from './pages/RolePermission';
 import './App.css';
 
 function App() {
@@ -44,6 +46,7 @@ function App() {
               <>
                 <Link to="/positions">岗位管理</Link>
                 <Link to="/ranks">职级配置</Link>
+                <Link to="/roles">角色管理</Link>
               </>
             )}
             <Link to="/personal">个人能力</Link>
@@ -62,6 +65,8 @@ function App() {
             <Route path="/" element={<Home user={currentUser} />} />
             <Route path="/positions" element={<PositionManagement />} />
             <Route path="/ranks" element={<RankConfig />} />
+            <Route path="/roles" element={<RoleManagement />} />
+            <Route path="/roles/:id" element={<RolePermission />} />
             <Route path="/personal" element={<PersonalRadar />} />
             <Route path="/team" element={<TeamRadar />} />
           </Routes>
@@ -88,6 +93,7 @@ function Home({ user }: { user: User }) {
     const allCards = [
       { path: '/positions', icon: '🖥️', title: '岗位管理', desc: '配置和管理岗位类型', roles: ['admin', 'hr'] },
       { path: '/ranks', icon: '📊', title: '职级配置', desc: '设置职级体系标准', roles: ['admin', 'hr'] },
+      { path: '/roles', icon: '🔒', title: '角色管理', desc: '管理角色和权限配置', roles: ['admin', 'hr'] },
       { path: '/personal', icon: '👤', title: '个人能力', desc: '查看个人能力雷达图', roles: ['admin', 'hr', 'manager', 'evaluator', 'employee', 'analyst'] },
       { path: '/team', icon: '👥', title: '团队能力', desc: '查看团队能力分析', roles: ['admin', 'hr', 'manager', 'analyst'] }
     ];

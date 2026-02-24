@@ -1,9 +1,17 @@
+export type AbilityDimension = {
+  id: string;
+  title: string;
+  description: string;
+  scores: Record<string, number>; // 不同职级的评分，如 { F1: 60, F2: 70, F3: 80, E1: 85, E2: 90, E3: 95 }
+}
+
 export type Position = {
   id: string;
   name: string;
   dimensions: number;
   ranks: string;
   status: 'active' | 'inactive';
+  abilityDimensions: AbilityDimension[];
 }
 
 export type Rank = {
@@ -36,11 +44,27 @@ export type Employee = {
 
 export type UserRole = 'admin' | 'hr' | 'manager' | 'evaluator' | 'employee' | 'analyst';
 
+export type Permission = {
+  id: string;
+  name: string;
+  description: string;
+  type: 'page' | 'action';
+  path?: string;
+};
+
+export type Role = {
+  id: string;
+  name: string;
+  description: string;
+  permissions: string[];
+};
+
 export type User = {
   id: number;
   username: string;
   password: string;
   name: string;
   role: UserRole;
+  email: string;
   permissions: string[];
-}
+};

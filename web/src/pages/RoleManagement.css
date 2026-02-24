@@ -1,4 +1,4 @@
-.position-management {
+.role-management {
   width: 100%;
 }
 
@@ -54,23 +54,7 @@ th {
   color: #262626;
 }
 
-.status {
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
-  font-size: 0.875rem;
-}
-
-.status.active {
-  background: #f6ffed;
-  color: #52c41a;
-}
-
-.status.inactive {
-  background: #fff1f0;
-  color: #ff4d4f;
-}
-
-.btn-edit, .btn-delete {
+.btn-edit, .btn-delete, .btn-add-users, .btn-view-permissions {
   background: none;
   border: none;
   cursor: pointer;
@@ -78,33 +62,8 @@ th {
   margin: 0 0.25rem;
 }
 
-.btn-edit:hover {
+.btn-edit:hover, .btn-delete:hover, .btn-add-users:hover, .btn-view-permissions:hover {
   opacity: 0.7;
-}
-
-.btn-delete:hover {
-  opacity: 0.7;
-}
-
-.btn-view-radar {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 1.2rem;
-  margin: 0 0.25rem;
-}
-
-.btn-view-radar:hover {
-  opacity: 0.7;
-}
-
-.radar-modal {
-  max-width: 700px;
-  width: 90%;
-}
-
-.chart-container {
-  margin: 1.5rem 0;
 }
 
 .modal-overlay {
@@ -144,7 +103,6 @@ th {
 }
 
 .form-group input,
-.form-group select,
 .form-group textarea {
   width: 100%;
   padding: 0.5rem;
@@ -159,81 +117,9 @@ th {
 }
 
 .form-group input:focus,
-.form-group select:focus,
 .form-group textarea:focus {
   outline: none;
   border-color: #1890ff;
-}
-
-.dimensions-list {
-  border: 1px solid #d9d9d9;
-  border-radius: 4px;
-  padding: 1rem;
-  margin-top: 0.5rem;
-}
-
-.dimension-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  padding: 1rem;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.dimension-item:last-child {
-  border-bottom: none;
-}
-
-.dimension-info h4 {
-  margin: 0 0 0.5rem 0;
-  font-size: 1rem;
-}
-
-.dimension-info p {
-  margin: 0;
-  color: #666;
-  font-size: 0.875rem;
-}
-
-.dimension-actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.btn-add-dimension {
-  width: 100%;
-  margin-top: 1rem;
-  padding: 0.75rem;
-  background: #fafafa;
-  border: 1px dashed #d9d9d9;
-  border-radius: 4px;
-  cursor: pointer;
-  color: #1890ff;
-  font-size: 0.875rem;
-}
-
-.btn-add-dimension:hover {
-  background: #f0f0f0;
-  border-color: #1890ff;
-}
-
-.scores-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-  margin-top: 0.5rem;
-}
-
-.score-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.score-item label {
-  font-size: 0.875rem;
-  font-weight: 500;
-  margin-bottom: 0;
 }
 
 .form-actions {
@@ -255,4 +141,46 @@ th {
 .btn-cancel:hover {
   border-color: #40a9ff;
   color: #40a9ff;
+}
+
+.users-list {
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  padding: 1rem;
+  margin-top: 0.5rem;
+}
+
+.user-item {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  align-items: center;
+}
+
+.user-item input {
+  flex: 1;
+}
+
+.btn-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.btn-add-user {
+  width: 100%;
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: #fafafa;
+  border: 1px dashed #d9d9d9;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #1890ff;
+  font-size: 0.875rem;
+}
+
+.btn-add-user:hover {
+  background: #f0f0f0;
+  border-color: #1890ff;
 }
