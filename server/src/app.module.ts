@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { RoleModule } from './role/role.module';
 import { PositionModule } from './position/position.module';
+import { RankModule } from './rank/rank.module';
 import { User } from './entities/user.entity';
 import { Role } from './entities/role.entity';
 import { Permission } from './entities/permission.entity';
@@ -41,6 +42,7 @@ import { Employee } from './entities/employee.entity';
     UserModule,
     RoleModule,
     PositionModule,
+    RankModule,
   ],
   controllers: [AppController],
   providers: [AppService],

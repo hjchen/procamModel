@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { storage } from '../utils/storage';
 import type { Role, User } from '../types';
+import { api } from '../services/api';
 import './RoleManagement.css';
 
 export default function RoleManagement() {
@@ -21,18 +21,29 @@ export default function RoleManagement() {
   });
 
   useEffect(() => {
-    loadRoles();
-    loadUsers();
+    const fetchData = async () => {
+      await loadRoles();
+      await loadUsers();
+    };
+    fetchData();
   }, []);
 
-  const loadRoles = () => {
-    const data = storage.get<Role[]>('ROLES') || [];
-    setRoles(data);
+  const loadRoles = async () => {
+    try {
+      const data = await api.getRoles();
+      setRoles(data);
+    } catch (error) {
+      console.error('获取角色列表失败:', error);
+    }
   };
 
-  const loadUsers = () => {
-    const data = storage.get<User[]>('USERS') || [];
-    setUsers(data);
+  const loadUsers = async () => {
+    try {
+      const data = await api.getUsers();
+      setUsers(data);
+    } catch (error) {
+      console.error('获取用户列表失败:', error);
+    }
   };
 
   const handleAdd = () => {

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { storage } from '../utils/storage';
 import ReactECharts from 'echarts-for-react';
 import type { Position, AbilityDimension } from '../types';
+import { api } from '../services/api';
 import './PositionManagement.css';
 
 export default function PositionManagement() {
@@ -29,12 +29,19 @@ export default function PositionManagement() {
   const [selectedRank, setSelectedRank] = useState<string>('F1');
 
   useEffect(() => {
-    loadPositions();
+    const fetchPositions = async () => {
+      await loadPositions();
+    };
+    fetchPositions();
   }, []);
 
-  const loadPositions = () => {
-    const data = storage.get<Position[]>('POSITIONS') || [];
-    setPositions(data);
+  const loadPositions = async () => {
+    try {
+      const data = await api.getPositions();
+      setPositions(data);
+    } catch (error) {
+      console.error('获取岗位列表失败:', error);
+    }
   };
 
   const handleAdd = () => {

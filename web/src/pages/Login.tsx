@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { storage } from '../utils/storage';
 import type { User } from '../types';
+import { api } from '../services/api';
 import './Login.css';
 
 interface LoginProps {
@@ -11,19 +12,22 @@ export default function Login({ onLoginSuccess }: LoginProps) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
 
-    const users = storage.get<User[]>('USERS') || [];
-    const user = users.find(u => u.username === username && u.password === password);
-
-    if (user) {
-      storage.set('CURRENT_USER', user);
-      onLoginSuccess(user);
-    } else {
-      setError('用户名或密码错误');
+    try {
+      const response = await api.login(username, password);
+      localStorage.setItem('token', response.access_token);
+      storage.set('CURRENT_USER', response.user);
+      onLoginSuccess(response.user);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '登录失败');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -62,7 +66,9 @@ export default function Login({ onLoginSuccess }: LoginProps) {
             />
           </div>
           {error && <div className="error-message">{error}</div>}
-          <button type="submit" className="login-btn">登录</button>
+          <button type="submit" className="login-btn" disabled={loading}>
+            {loading ? '登录中...' : '登录'}
+          </button>
         </form>
 
         <div className="user-hints">

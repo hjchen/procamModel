@@ -14,7 +14,10 @@ export class AuthService {
   ) {}
 
   async validateUser(username: string, password: string): Promise<any> {
-    const user = await this.usersRepository.findOne({ where: { username } });
+    const user = await this.usersRepository.findOne({ 
+      where: { username },
+      relations: ['role']
+    });
     if (!user) {
       throw new UnauthorizedException('用户不存在');
     }
@@ -28,8 +31,13 @@ export class AuthService {
       throw new UnauthorizedException('用户已被禁用');
     }
 
-    const { password: _, ...result } = user;
-    return result;
+    const { password: _, role, ...result } = user;
+    // 创建一个新的对象，将role转换为字符串
+    return {
+      ...result,
+      role: role?.name || 'employee',
+      permissions: user.permissions
+    };
   }
 
   async login(user: any) {

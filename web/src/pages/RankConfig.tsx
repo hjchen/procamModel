@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { storage } from '../utils/storage';
 import type { RankSystem, Rank } from '../types';
+import { api } from '../services/api';
 import './RankConfig.css';
 
 export default function RankConfig() {
@@ -16,12 +16,24 @@ export default function RankConfig() {
   });
 
   useEffect(() => {
-    loadRanks();
+    const fetchRanks = async () => {
+      await loadRanks();
+    };
+    fetchRanks();
   }, []);
 
-  const loadRanks = () => {
-    const data = storage.get<RankSystem>('RANKS') || { F: [], E: [] };
-    setRankSystem(data);
+  const loadRanks = async () => {
+    try {
+      const data = await api.getRanks();
+      // 转换数据格式，按照F和E序列分组
+      const groupedRanks = {
+        F: data.filter((rank: any) => rank.category === 'F'),
+        E: data.filter((rank: any) => rank.category === 'E')
+      };
+      setRankSystem(groupedRanks);
+    } catch (error) {
+      console.error('获取职级列表失败:', error);
+    }
   };
 
   const handleAdd = () => {
