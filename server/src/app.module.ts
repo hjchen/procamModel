@@ -37,7 +37,7 @@ import { Employee } from './entities/employee.entity';
       ],
       synchronize: true,
     }),
-    TypeOrmModule.forFeature([Role, Permission, User]),
+    TypeOrmModule.forFeature([Role, Permission, User, Position, AbilityDimension, Rank]),
     AuthModule,
     UserModule,
     RoleModule,
