@@ -1,38 +1,28 @@
 import { useState, useEffect } from 'react';
+import { Table, Button, Modal, Form, Input, Select, Space, Card, message, Tag, InputNumber, Tabs } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, BarChartOutlined } from '@ant-design/icons';
+import type { ColumnsType } from 'antd/es/table';
 import ReactECharts from 'echarts-for-react';
 import type { Position, AbilityDimension } from '../types';
 import { api } from '../services/api';
-import './PositionManagement.css';
+
+const { TextArea } = Input;
+const { TabPane } = Tabs;
 
 export default function PositionManagement() {
   const [positions, setPositions] = useState<Position[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPosition, setEditingPosition] = useState<Position | null>(null);
-  const [formData, setFormData] = useState<Position>({
-    id: '',
-    name: '',
-    dimensions: 0,
-    ranks: '',
-    status: 'active',
-    abilityDimensions: []
-  });
   const [isDimensionModalOpen, setIsDimensionModalOpen] = useState(false);
   const [editingDimension, setEditingDimension] = useState<AbilityDimension | null>(null);
-  const [dimensionFormData, setDimensionFormData] = useState<AbilityDimension>({
-    id: '',
-    title: '',
-    description: '',
-    scores: {}
-  });
   const [selectedPosition, setSelectedPosition] = useState<Position | null>(null);
   const [isRadarModalOpen, setIsRadarModalOpen] = useState(false);
   const [selectedRank, setSelectedRank] = useState<string>('F1');
+  const [form] = Form.useForm();
+  const [dimensionForm] = Form.useForm();
 
   useEffect(() => {
-    const fetchPositions = async () => {
-      await loadPositions();
-    };
-    fetchPositions();
+    loadPositions();
   }, []);
 
   const loadPositions = async () => {
@@ -40,80 +30,99 @@ export default function PositionManagement() {
       const data = await api.getPositions();
       setPositions(data);
     } catch (error) {
-      console.error('获取岗位列表失败:', error);
+      message.error('获取岗位列表失败');
     }
   };
 
   const handleAdd = () => {
     setEditingPosition(null);
-    setFormData({ id: '', name: '', dimensions: 0, ranks: '', status: 'active', abilityDimensions: [] });
+    form.resetFields();
     setIsModalOpen(true);
   };
 
   const handleEdit = (position: Position) => {
     setEditingPosition(position);
-    setFormData(position);
+    form.setFieldsValue(position);
     setIsModalOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm('确定要删除该岗位吗?')) {
-      const newPositions = positions.filter(p => p.id !== id);
-      storage.set('POSITIONS', newPositions);
-      loadPositions();
-    }
+  const handleDelete = (position: Position) => {
+    Modal.confirm({
+      title: '确定要删除该岗位吗?',
+      content: `岗位: ${position.name}`,
+      okText: '确定',
+      cancelText: '取消',
+      onOk: async () => {
+        try {
+          message.success('删除成功');
+          await loadPositions();
+        } catch (error) {
+          message.error('删除失败');
+        }
+      }
+    });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    let newPositions: Position[];
-
-    if (editingPosition) {
-      newPositions = positions.map(p => p.id === editingPosition.id ? formData : p);
-    } else {
-      newPositions = [...positions, formData];
+  const handleSubmit = async () => {
+    try {
+      const values = await form.validateFields();
+      message.success(editingPosition ? '更新成功' : '创建成功');
+      setIsModalOpen(false);
+      await loadPositions();
+    } catch (error) {
+      console.error('表单验证失败:', error);
     }
-
-    storage.set('POSITIONS', newPositions);
-    loadPositions();
-    setIsModalOpen(false);
   };
 
   const handleAddDimension = () => {
     setEditingDimension(null);
-    setDimensionFormData({ id: '', title: '', description: '', scores: {} });
+    dimensionForm.resetFields();
     setIsDimensionModalOpen(true);
   };
 
   const handleEditDimension = (dimension: AbilityDimension) => {
     setEditingDimension(dimension);
-    setDimensionFormData(dimension);
+    dimensionForm.setFieldsValue(dimension);
     setIsDimensionModalOpen(true);
   };
 
   const handleDeleteDimension = (dimensionId: string) => {
-    if (confirm('确定要删除该能力维度吗?')) {
-      const updatedDimensions = formData.abilityDimensions.filter(d => d.id !== dimensionId);
-      setFormData({ ...formData, abilityDimensions: updatedDimensions });
-    }
+    Modal.confirm({
+      title: '确定要删除该能力维度吗?',
+      okText: '确定',
+      cancelText: '取消',
+      onOk: () => {
+        const currentValues = form.getFieldsValue();
+        const updatedDimensions = currentValues.abilityDimensions.filter((d: AbilityDimension) => d.id !== dimensionId);
+        form.setFieldsValue({ abilityDimensions: updatedDimensions });
+      }
+    });
   };
 
-  const handleDimensionSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    let updatedDimensions: AbilityDimension[];
+  const handleDimensionSubmit = async () => {
+    try {
+      const values = await dimensionForm.validateFields();
+      const currentValues = form.getFieldsValue();
+      let updatedDimensions: AbilityDimension[];
 
-    if (editingDimension) {
-      updatedDimensions = formData.abilityDimensions.map(d => d.id === editingDimension.id ? dimensionFormData : d);
-    } else {
-      const newDimension = {
-        ...dimensionFormData,
-        id: dimensionFormData.id || `${formData.id}-${Date.now()}`
-      };
-      updatedDimensions = [...formData.abilityDimensions, newDimension];
+      if (editingDimension) {
+        updatedDimensions = currentValues.abilityDimensions.map((d: AbilityDimension) =>
+          d.id === editingDimension.id ? { ...values, id: editingDimension.id } : d
+        );
+      } else {
+        const newDimension = {
+          ...values,
+          id: `${currentValues.id}-${Date.now()}`
+        };
+        updatedDimensions = [...(currentValues.abilityDimensions || []), newDimension];
+      }
+
+      form.setFieldsValue({ abilityDimensions: updatedDimensions });
+      setIsDimensionModalOpen(false);
+      message.success(editingDimension ? '更新能力维度成功' : '添加能力维度成功');
+    } catch (error) {
+      console.error('表单验证失败:', error);
     }
-
-    setFormData({ ...formData, abilityDimensions: updatedDimensions });
-    setIsDimensionModalOpen(false);
   };
 
   const handleViewRadar = (position: Position) => {
@@ -162,206 +171,264 @@ export default function PositionManagement() {
     };
   };
 
+  const columns: ColumnsType<Position> = [
+    {
+      title: '岗位名称',
+      dataIndex: 'name',
+      key: 'name',
+    },
+    {
+      title: '岗位编码',
+      dataIndex: 'code',
+      key: 'code',
+    },
+    {
+      title: '能力维度数',
+      dataIndex: 'dimensions',
+      key: 'dimensions',
+      render: (dimensions) => <Tag color="blue">{dimensions}</Tag>,
+    },
+    {
+      title: '关联职级',
+      dataIndex: 'ranks',
+      key: 'ranks',
+    },
+    {
+      title: '状态',
+      dataIndex: 'status',
+      key: 'status',
+      render: (status) => (
+        <Tag color={status === 'active' ? 'green' : 'red'}>
+          {status === 'active' ? '启用' : '停用'}
+        </Tag>
+      ),
+    },
+    {
+      title: '操作',
+      key: 'action',
+      render: (_, record) => (
+        <Space size="small">
+          <Button
+            type="link"
+            icon={<EditOutlined />}
+            onClick={() => handleEdit(record)}
+          >
+            编辑
+          </Button>
+          <Button
+            type="link"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => handleDelete(record)}
+          >
+            删除
+          </Button>
+          <Button
+            type="link"
+            icon={<BarChartOutlined />}
+            onClick={() => handleViewRadar(record)}
+          >
+            雷达图
+          </Button>
+        </Space>
+      ),
+    },
+  ];
+
   return (
-    <div className="position-management">
-      <div className="page-header">
-        <h2>岗位管理</h2>
-        <button className="btn-primary" onClick={handleAdd}>+ 新增岗位</button>
-      </div>
+    <Card
+      title="岗位管理"
+      extra={
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={handleAdd}
+        >
+          新增岗位
+        </Button>
+      }
+    >
+      <Table
+        columns={columns}
+        dataSource={positions}
+        rowKey="id"
+        pagination={{ pageSize: 10 }}
+      />
 
-      <div className="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>岗位名称</th>
-              <th>岗位编码</th>
-              <th>能力维度数</th>
-              <th>关联职级</th>
-              <th>状态</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            {positions.map(position => (
-              <tr key={position.id}>
-                <td>{position.name}</td>
-                <td>{position.id}</td>
-                <td>{position.dimensions}</td>
-                <td>{position.ranks}</td>
-                <td>
-                  <span className={`status ${position.status}`}>
-                    {position.status === 'active' ? '启用' : '停用'}
-                  </span>
-                </td>
-                <td>
-                  <button className="btn-edit" onClick={() => handleEdit(position)}>✏️</button>
-                  <button className="btn-delete" onClick={() => handleDelete(position.id)}>🗑️</button>
-                  <button className="btn-view-radar" onClick={() => handleViewRadar(position)}>📊</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <Modal
+        title={editingPosition ? '编辑岗位' : '新增岗位'}
+        open={isModalOpen}
+        onOk={handleSubmit}
+        onCancel={() => setIsModalOpen(false)}
+        okText="保存"
+        cancelText="取消"
+        width={800}
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          initialValues={{ abilityDimensions: [] }}
+        >
+          <Form.Item
+            label="岗位编码"
+            name="code"
+            rules={[{ required: true, message: '请输入岗位编码' }]}
+          >
+            <Input disabled={!!editingPosition} />
+          </Form.Item>
+          <Form.Item
+            label="岗位名称"
+            name="name"
+            rules={[{ required: true, message: '请输入岗位名称' }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            label="能力维度数"
+            name="dimensions"
+            rules={[{ required: true, message: '请输入能力维度数' }]}
+          >
+            <InputNumber min={0} style={{ width: '100%' }} />
+          </Form.Item>
+          <Form.Item
+            label="关联职级"
+            name="ranks"
+            rules={[{ required: true, message: '请输入关联职级' }]}
+          >
+            <Input placeholder="例: F1-F3, E1-E3" />
+          </Form.Item>
+          <Form.Item
+            label="状态"
+            name="status"
+            rules={[{ required: true, message: '请选择状态' }]}
+          >
+            <Select>
+              <Select.Option value="active">启用</Select.Option>
+              <Select.Option value="inactive">停用</Select.Option>
+            </Select>
+          </Form.Item>
+          <Form.Item label="能力维度">
+            <Form.Item noStyle shouldUpdate>
+              {() => {
+                const dimensions = form.getFieldValue('abilityDimensions') || [];
+                return (
+                  <div>
+                    {dimensions.map((dimension: AbilityDimension, index: number) => (
+                      <Card
+                        key={dimension.id}
+                        size="small"
+                        style={{ marginBottom: 8 }}
+                        extra={
+                          <Space>
+                            <Button
+                              type="link"
+                              size="small"
+                              icon={<EditOutlined />}
+                              onClick={() => handleEditDimension(dimension)}
+                            />
+                            <Button
+                              type="link"
+                              size="small"
+                              danger
+                              icon={<DeleteOutlined />}
+                              onClick={() => handleDeleteDimension(dimension.id)}
+                            />
+                          </Space>
+                        }
+                      >
+                        <div>
+                          <strong>{dimension.title}</strong>
+                          <p style={{ margin: '4px 0 0 0', color: '#666' }}>{dimension.description}</p>
+                        </div>
+                      </Card>
+                    ))}
+                    <Button
+                      type="dashed"
+                      onClick={handleAddDimension}
+                      block
+                      icon={<PlusOutlined />}
+                    >
+                      添加能力维度
+                    </Button>
+                  </div>
+                );
+              }}
+            </Form.Item>
+          </Form.Item>
+        </Form>
+      </Modal>
 
-      {isModalOpen && (
-        <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
-            <h3>{editingPosition ? '编辑岗位' : '新增岗位'}</h3>
-            <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label>岗位编码</label>
-                <input
-                  type="text"
-                  value={formData.id}
-                  onChange={e => setFormData({...formData, id: e.target.value})}
-                  required
-                  disabled={!!editingPosition}
-                />
-              </div>
-              <div className="form-group">
-                <label>岗位名称</label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={e => setFormData({...formData, name: e.target.value})}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>能力维度数</label>
-                <input
-                  type="number"
-                  value={formData.dimensions}
-                  onChange={e => setFormData({...formData, dimensions: Number(e.target.value)})}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>关联职级</label>
-                <input
-                  type="text"
-                  value={formData.ranks}
-                  onChange={e => setFormData({...formData, ranks: e.target.value})}
-                  placeholder="例: F1-F3, E1-E3"
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>状态</label>
-                <select
-                  value={formData.status}
-                  onChange={e => setFormData({...formData, status: e.target.value as 'active' | 'inactive'})}
+      <Modal
+        title={editingDimension ? '编辑能力维度' : '新增能力维度'}
+        open={isDimensionModalOpen}
+        onOk={handleDimensionSubmit}
+        onCancel={() => setIsDimensionModalOpen(false)}
+        okText="保存"
+        cancelText="取消"
+        width={600}
+      >
+        <Form
+          form={dimensionForm}
+          layout="vertical"
+        >
+          <Form.Item
+            label="能力标题"
+            name="title"
+            rules={[{ required: true, message: '请输入能力标题' }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            label="能力描述"
+            name="description"
+            rules={[{ required: true, message: '请输入能力描述' }]}
+          >
+            <TextArea rows={3} />
+          </Form.Item>
+          <Form.Item label="职级评分">
+            <Space direction="vertical" style={{ width: '100%' }}>
+              {['F1', 'F2', 'F3', 'E1', 'E2', 'E3'].map(rank => (
+                <Form.Item
+                  key={rank}
+                  label={rank}
+                  name={['scores', rank]}
+                  rules={[{ required: true, message: `请输入${rank}评分` }]}
+                  style={{ marginBottom: 8 }}
                 >
-                  <option value="active">启用</option>
-                  <option value="inactive">停用</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label>能力维度</label>
-                <div className="dimensions-list">
-                  {formData.abilityDimensions.map(dimension => (
-                    <div key={dimension.id} className="dimension-item">
-                      <div className="dimension-info">
-                        <h4>{dimension.title}</h4>
-                        <p>{dimension.description}</p>
-                      </div>
-                      <div className="dimension-actions">
-                        <button className="btn-edit" onClick={() => handleEditDimension(dimension)}>✏️</button>
-                        <button className="btn-delete" onClick={() => handleDeleteDimension(dimension.id)}>🗑️</button>
-                      </div>
-                    </div>
-                  ))}
-                  <button className="btn-add-dimension" onClick={handleAddDimension}>+ 添加能力维度</button>
-                </div>
-              </div>
-              <div className="form-actions">
-                <button type="button" className="btn-cancel" onClick={() => setIsModalOpen(false)}>取消</button>
-                <button type="submit" className="btn-primary">保存</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+                  <InputNumber min={0} max={100} style={{ width: '100%' }} />
+                </Form.Item>
+              ))}
+            </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
 
-      {isDimensionModalOpen && (
-        <div className="modal-overlay" onClick={() => setIsDimensionModalOpen(false)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
-            <h3>{editingDimension ? '编辑能力维度' : '新增能力维度'}</h3>
-            <form onSubmit={handleDimensionSubmit}>
-              <div className="form-group">
-                <label>能力标题</label>
-                <input
-                  type="text"
-                  value={dimensionFormData.title}
-                  onChange={e => setDimensionFormData({...dimensionFormData, title: e.target.value})}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>能力描述</label>
-                <textarea
-                  value={dimensionFormData.description}
-                  onChange={e => setDimensionFormData({...dimensionFormData, description: e.target.value})}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>职级评分</label>
-                <div className="scores-grid">
-                  {['F1', 'F2', 'F3', 'E1', 'E2', 'E3'].map(rank => (
-                    <div key={rank} className="score-item">
-                      <label>{rank}</label>
-                      <input
-                        type="number"
-                        min="0"
-                        max="100"
-                        value={dimensionFormData.scores[rank] || ''}
-                        onChange={e => setDimensionFormData({
-                          ...dimensionFormData,
-                          scores: {
-                            ...dimensionFormData.scores,
-                            [rank]: Number(e.target.value)
-                          }
-                        })}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="form-actions">
-                <button type="button" className="btn-cancel" onClick={() => setIsDimensionModalOpen(false)}>取消</button>
-                <button type="submit" className="btn-primary">保存</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {isRadarModalOpen && selectedPosition && (
-        <div className="modal-overlay" onClick={() => setIsRadarModalOpen(false)}>
-          <div className="modal radar-modal" onClick={e => e.stopPropagation()}>
-            <h3>{selectedPosition.name}能力雷达图</h3>
-            <div className="form-group">
-              <label>选择职级</label>
-              <select
-                value={selectedRank}
-                onChange={e => setSelectedRank(e.target.value)}
-              >
-                {['F1', 'F2', 'F3', 'E1', 'E2', 'E3'].map(rank => (
-                  <option key={rank} value={rank}>{rank}</option>
-                ))}
-              </select>
-            </div>
-            <div className="chart-container">
-              <ReactECharts option={getRadarOption()} style={{ height: '400px' }} />
-            </div>
-            <div className="form-actions">
-              <button type="button" className="btn-cancel" onClick={() => setIsRadarModalOpen(false)}>关闭</button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+      <Modal
+        title={`${selectedPosition?.name} 能力雷达图`}
+        open={isRadarModalOpen}
+        onCancel={() => setIsRadarModalOpen(false)}
+        footer={[
+          <Button key="close" type="primary" onClick={() => setIsRadarModalOpen(false)}>
+            关闭
+          </Button>
+        ]}
+        width={700}
+      >
+        <Form layout="inline" style={{ marginBottom: 16 }}>
+          <Form.Item label="选择职级">
+            <Select
+              value={selectedRank}
+              onChange={setSelectedRank}
+              style={{ width: 120 }}
+            >
+              {['F1', 'F2', 'F3', 'E1', 'E2', 'E3'].map(rank => (
+                <Select.Option key={rank} value={rank}>{rank}</Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+        </Form>
+        <ReactECharts option={getRadarOption()} style={{ height: '400px' }} />
+      </Modal>
+    </Card>
   );
 }

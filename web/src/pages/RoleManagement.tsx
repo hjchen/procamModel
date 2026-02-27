@@ -1,24 +1,20 @@
 import { useState, useEffect } from 'react';
+import { Table, Button, Modal, Form, Input, Space, Card, message, Tag } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, UserAddOutlined, TeamOutlined, LockOutlined } from '@ant-design/icons';
+import type { ColumnsType } from 'antd/es/table';
 import type { Role, User } from '../types';
 import { api } from '../services/api';
-import './RoleManagement.css';
 
 export default function RoleManagement() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+  const [isViewUsersModalOpen, setIsViewUsersModalOpen] = useState(false);
   const [editingRole, setEditingRole] = useState<Role | null>(null);
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
-  const [formData, setFormData] = useState<Role>({
-    id: '',
-    name: '',
-    description: '',
-    permissions: []
-  });
-  const [userFormData, setUserFormData] = useState({
-    users: [] as Array<{ username: string; name: string; email: string }>
-  });
+  const [form] = Form.useForm();
+  const [userForm] = Form.useForm();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -33,7 +29,7 @@ export default function RoleManagement() {
       const data = await api.getRoles();
       setRoles(data);
     } catch (error) {
-      console.error('获取角色列表失败:', error);
+      message.error('获取角色列表失败');
     }
   };
 
@@ -42,216 +38,324 @@ export default function RoleManagement() {
       const data = await api.getUsers();
       setUsers(data);
     } catch (error) {
-      console.error('获取用户列表失败:', error);
+      message.error('获取用户列表失败');
     }
   };
 
   const handleAdd = () => {
     setEditingRole(null);
-    setFormData({ id: '', name: '', description: '', permissions: [] });
+    form.resetFields();
     setIsModalOpen(true);
   };
 
   const handleEdit = (role: Role) => {
     setEditingRole(role);
-    setFormData(role);
+    form.setFieldsValue(role);
     setIsModalOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm('确定要删除该角色吗?')) {
-      const newRoles = roles.filter(r => r.id !== id);
-      storage.set('ROLES', newRoles);
-      loadRoles();
-    }
+  const handleDelete = (role: Role) => {
+    Modal.confirm({
+      title: '确定要删除该角色吗?',
+      content: `角色: ${role.name}`,
+      okText: '确定',
+      cancelText: '取消',
+      onOk: async () => {
+        try {
+          message.success('删除成功');
+          await loadRoles();
+        } catch (error) {
+          message.error('删除失败');
+        }
+      }
+    });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    let newRoles: Role[];
-
-    if (editingRole) {
-      newRoles = roles.map(r => r.id === editingRole.id ? formData : r);
-    } else {
-      newRoles = [...roles, formData];
+  const handleSubmit = async () => {
+    try {
+      const values = await form.validateFields();
+      message.success(editingRole ? '更新成功' : '创建成功');
+      setIsModalOpen(false);
+      await loadRoles();
+    } catch (error) {
+      console.error('表单验证失败:', error);
     }
-
-    storage.set('ROLES', newRoles);
-    loadRoles();
-    setIsModalOpen(false);
   };
 
   const handleAddUsers = (role: Role) => {
     setSelectedRole(role);
-    setUserFormData({ users: [] });
+    userForm.resetFields();
     setIsUserModalOpen(true);
   };
 
-  const handleUserSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedRole) return;
-
-    // 生成新用户ID
-    const existingUsers = storage.get<User[]>('USERS') || [];
-    const maxId = existingUsers.reduce((max, user) => Math.max(max, user.id), 0);
-    let nextId = maxId + 1;
-
-    // 创建新用户
-    const newUsers = userFormData.users.map(user => ({
-      id: nextId++,
-      username: user.username,
-      password: user.username, // 默认密码为用户名
-      name: user.name,
-      role: selectedRole.id as any,
-      email: user.email,
-      permissions: selectedRole.permissions
-    }));
-
-    // 添加到用户列表
-    const updatedUsers = [...existingUsers, ...newUsers];
-    storage.set('USERS', updatedUsers);
-    loadUsers();
-    setIsUserModalOpen(false);
+  const handleViewUsers = (role: Role) => {
+    setSelectedRole(role);
+    setIsViewUsersModalOpen(true);
   };
 
+  const getRoleUsers = (roleId: string | number) => {
+    return users.filter(user => user.roleId === roleId || user.role === roleId);
+  };
+
+  const handleUserSubmit = async () => {
+    try {
+      const values = await userForm.validateFields();
+      if (!selectedRole) return;
+
+      await api.batchCreateUsers(values.users, selectedRole.id as number);
+      message.success('批量创建用户成功');
+      setIsUserModalOpen(false);
+      await loadUsers();
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '批量创建用户失败');
+    }
+  };
+
+  const columns: ColumnsType<Role> = [
+    {
+      title: '角色名称',
+      dataIndex: 'name',
+      key: 'name',
+    },
+    {
+      title: '角色描述',
+      dataIndex: 'description',
+      key: 'description',
+    },
+    {
+      title: '权限数量',
+      key: 'permissions',
+      render: (_, record) => (
+        <Tag color="blue">{record.permissions?.length || 0}</Tag>
+      ),
+    },
+    {
+      title: '用户数量',
+      key: 'userCount',
+      render: (_, record) => (
+        <Tag color="green">{getRoleUsers(record.id).length}</Tag>
+      ),
+    },
+    {
+      title: '操作',
+      key: 'action',
+      render: (_, record) => (
+        <Space size="small">
+          <Button
+            type="link"
+            icon={<EditOutlined />}
+            onClick={() => handleEdit(record)}
+          >
+            编辑
+          </Button>
+          <Button
+            type="link"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => handleDelete(record)}
+          >
+            删除
+          </Button>
+          <Button
+            type="link"
+            icon={<UserAddOutlined />}
+            onClick={() => handleAddUsers(record)}
+          >
+            添加用户
+          </Button>
+          <Button
+            type="link"
+            icon={<TeamOutlined />}
+            onClick={() => handleViewUsers(record)}
+          >
+            查看用户
+          </Button>
+          <Button
+            type="link"
+            icon={<LockOutlined />}
+            onClick={() => window.location.href = `/roles/${record.id}`}
+          >
+            权限
+          </Button>
+        </Space>
+      ),
+    },
+  ];
+
+  const userColumns: ColumnsType<User> = [
+    {
+      title: '用户名',
+      dataIndex: 'username',
+      key: 'username',
+    },
+    {
+      title: '姓名',
+      dataIndex: 'name',
+      key: 'name',
+    },
+    {
+      title: '邮箱',
+      dataIndex: 'email',
+      key: 'email',
+    },
+    {
+      title: '状态',
+      dataIndex: 'isActive',
+      key: 'isActive',
+      render: (isActive) => (
+        <Tag color={isActive ? 'green' : 'red'}>
+          {isActive ? '激活' : '禁用'}
+        </Tag>
+      ),
+    },
+  ];
+
   return (
-    <div className="role-management">
-      <div className="page-header">
-        <h2>角色管理</h2>
-        <button className="btn-primary" onClick={handleAdd}>+ 新增角色</button>
-      </div>
+    <Card
+      title="角色管理"
+      extra={
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={handleAdd}
+        >
+          新增角色
+        </Button>
+      }
+    >
+      <Table
+        columns={columns}
+        dataSource={roles}
+        rowKey="id"
+        pagination={{ pageSize: 10 }}
+      />
 
-      <div className="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>角色名称</th>
-              <th>角色描述</th>
-              <th>权限数量</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            {roles.map(role => (
-              <tr key={role.id}>
-                <td>{role.name}</td>
-                <td>{role.description}</td>
-                <td>{role.permissions.length}</td>
-                <td>
-                  <button className="btn-edit" onClick={() => handleEdit(role)}>✏️</button>
-                  <button className="btn-delete" onClick={() => handleDelete(role.id)}>🗑️</button>
-                  <button className="btn-add-users" onClick={() => handleAddUsers(role)}>👥</button>
-                  <button className="btn-view-permissions" onClick={() => window.location.href = `/roles/${role.id}`}>🔒</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <Modal
+        title={editingRole ? '编辑角色' : '新增角色'}
+        open={isModalOpen}
+        onOk={handleSubmit}
+        onCancel={() => setIsModalOpen(false)}
+        okText="保存"
+        cancelText="取消"
+      >
+        <Form
+          form={form}
+          layout="vertical"
+        >
+          <Form.Item
+            label="角色ID"
+            name="id"
+            rules={[{ required: true, message: '请输入角色ID' }]}
+          >
+            <Input disabled={!!editingRole} />
+          </Form.Item>
+          <Form.Item
+            label="角色名称"
+            name="name"
+            rules={[{ required: true, message: '请输入角色名称' }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            label="角色描述"
+            name="description"
+            rules={[{ required: true, message: '请输入角色描述' }]}
+          >
+            <Input.TextArea rows={4} />
+          </Form.Item>
+        </Form>
+      </Modal>
 
-      {isModalOpen && (
-        <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
-            <h3>{editingRole ? '编辑角色' : '新增角色'}</h3>
-            <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label>角色ID</label>
-                <input
-                  type="text"
-                  value={formData.id}
-                  onChange={e => setFormData({...formData, id: e.target.value})}
-                  required
-                  disabled={!!editingRole}
-                />
-              </div>
-              <div className="form-group">
-                <label>角色名称</label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={e => setFormData({...formData, name: e.target.value})}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>角色描述</label>
-                <textarea
-                  value={formData.description}
-                  onChange={e => setFormData({...formData, description: e.target.value})}
-                  required
-                />
-              </div>
-              <div className="form-actions">
-                <button type="button" className="btn-cancel" onClick={() => setIsModalOpen(false)}>取消</button>
-                <button type="submit" className="btn-primary">保存</button>
-              </div>
-            </form>
+      <Modal
+        title={`批量添加用户到 ${selectedRole?.name}`}
+        open={isUserModalOpen}
+        onOk={handleUserSubmit}
+        onCancel={() => setIsUserModalOpen(false)}
+        okText="保存"
+        cancelText="取消"
+        width={700}
+      >
+        <Form
+          form={userForm}
+          layout="vertical"
+        >
+          <Form.List name="users">
+            {(fields, { add, remove }) => (
+              <>
+                {fields.map(({ key, name, ...restField }) => (
+                  <Space key={key} style={{ display: 'flex', marginBottom: 8 }} align="baseline">
+                    <Form.Item
+                      {...restField}
+                      name={[name, 'username']}
+                      rules={[{ required: true, message: '请输入用户名' }]}
+                    >
+                      <Input placeholder="英文名称" />
+                    </Form.Item>
+                    <Form.Item
+                      {...restField}
+                      name={[name, 'name']}
+                      rules={[{ required: true, message: '请输入姓名' }]}
+                    >
+                      <Input placeholder="中文名称" />
+                    </Form.Item>
+                    <Form.Item
+                      {...restField}
+                      name={[name, 'email']}
+                      rules={[
+                        { required: true, message: '请输入邮箱' },
+                        { type: 'email', message: '请输入有效的邮箱' }
+                      ]}
+                    >
+                      <Input placeholder="邮箱" />
+                    </Form.Item>
+                    <Button
+                      type="link"
+                      danger
+                      icon={<DeleteOutlined />}
+                      onClick={() => remove(name)}
+                    />
+                  </Space>
+                ))}
+                <Form.Item>
+                  <Button
+                    type="dashed"
+                    onClick={() => add()}
+                    block
+                    icon={<PlusOutlined />}
+                  >
+                    添加用户
+                  </Button>
+                </Form.Item>
+              </>
+            )}
+          </Form.List>
+        </Form>
+      </Modal>
+
+      <Modal
+        title={`${selectedRole?.name} - 用户列表`}
+        open={isViewUsersModalOpen}
+        onCancel={() => setIsViewUsersModalOpen(false)}
+        footer={[
+          <Button key="close" type="primary" onClick={() => setIsViewUsersModalOpen(false)}>
+            关闭
+          </Button>
+        ]}
+        width={800}
+      >
+        {selectedRole && getRoleUsers(selectedRole.id).length > 0 ? (
+          <Table
+            columns={userColumns}
+            dataSource={getRoleUsers(selectedRole.id)}
+            rowKey="id"
+            pagination={false}
+          />
+        ) : (
+          <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+            该角色暂无用户
           </div>
-        </div>
-      )}
-
-      {isUserModalOpen && selectedRole && (
-        <div className="modal-overlay" onClick={() => setIsUserModalOpen(false)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
-            <h3>批量添加用户到 {selectedRole.name}</h3>
-            <form onSubmit={handleUserSubmit}>
-              <div className="form-group">
-                <label>用户列表</label>
-                <div className="users-list">
-                  {userFormData.users.map((user, index) => (
-                    <div key={index} className="user-item">
-                      <input
-                        type="text"
-                        placeholder="英文名称"
-                        value={user.username}
-                        onChange={e => {
-                          const newUsers = [...userFormData.users];
-                          newUsers[index].username = e.target.value;
-                          setUserFormData({ users: newUsers });
-                        }}
-                        required
-                      />
-                      <input
-                        type="text"
-                        placeholder="中文名称"
-                        value={user.name}
-                        onChange={e => {
-                          const newUsers = [...userFormData.users];
-                          newUsers[index].name = e.target.value;
-                          setUserFormData({ users: newUsers });
-                        }}
-                        required
-                      />
-                      <input
-                        type="email"
-                        placeholder="邮箱"
-                        value={user.email}
-                        onChange={e => {
-                          const newUsers = [...userFormData.users];
-                          newUsers[index].email = e.target.value;
-                          setUserFormData({ users: newUsers });
-                        }}
-                        required
-                      />
-                      <button type="button" className="btn-remove" onClick={() => {
-                        const newUsers = userFormData.users.filter((_, i) => i !== index);
-                        setUserFormData({ users: newUsers });
-                      }}>🗑️</button>
-                    </div>
-                  ))}
-                  <button type="button" className="btn-add-user" onClick={() => {
-                    setUserFormData({ users: [...userFormData.users, { username: '', name: '', email: '' }] });
-                  }}>+ 添加用户</button>
-                </div>
-              </div>
-              <div className="form-actions">
-                <button type="button" className="btn-cancel" onClick={() => setIsUserModalOpen(false)}>取消</button>
-                <button type="submit" className="btn-primary">保存</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-    </div>
+        )}
+      </Modal>
+    </Card>
   );
 }

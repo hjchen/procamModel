@@ -94,4 +94,22 @@ export const api = {
 
     return response.json();
   },
+
+  async batchCreateUsers(users: Array<{ username: string; name: string; email: string }>, roleId: number) {
+    const response = await fetch(`${API_BASE_URL}/users/batch`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+      body: JSON.stringify({ users, roleId }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || '批量创建用户失败');
+    }
+
+    return response.json();
+  },
 };

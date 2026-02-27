@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../entities/user.entity';
@@ -16,9 +16,9 @@ export class UserService {
   }
 
   async findOne(id: number): Promise<User> {
-    const user = await this.usersRepository.findOne({ 
+    const user = await this.usersRepository.findOne({
       where: { id },
-      relations: ['role'] 
+      relations: ['role']
     });
     if (!user) {
       throw new NotFoundException('用户不存在');
@@ -35,7 +35,7 @@ export class UserService {
   }): Promise<User> {
     const existingUser = await this.usersRepository.findOne({ where: { username: userData.username } });
     if (existingUser) {
-      throw new NotFoundException('用户名已存在');
+      throw new ConflictException('用户名已存在');
     }
 
     const hashedPassword = await bcrypt.hash(userData.password, 10);

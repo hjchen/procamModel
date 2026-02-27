@@ -1,26 +1,26 @@
 import { useState } from 'react';
+import { Form, Input, Button, Card, Typography, Row, Col, Alert, Descriptions } from 'antd';
+import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { storage } from '../utils/storage';
 import type { User } from '../types';
 import { api } from '../services/api';
-import './Login.css';
+
+const { Title, Text } = Typography;
 
 interface LoginProps {
   onLoginSuccess: (user: User) => void;
 }
 
 export default function Login({ onLoginSuccess }: LoginProps) {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (values: { username: string; password: string }) => {
     setError('');
     setLoading(true);
 
     try {
-      const response = await api.login(username, password);
+      const response = await api.login(values.username, values.password);
       localStorage.setItem('token', response.access_token);
       storage.set('CURRENT_USER', response.user);
       onLoginSuccess(response.user);
@@ -41,48 +41,97 @@ export default function Login({ onLoginSuccess }: LoginProps) {
   ];
 
   return (
-    <div className="login-container">
-      <div className="login-box">
-        <h1>程序员能力模型平台</h1>
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>用户名</label>
-            <input
-              type="text"
-              value={username}
-              onChange={e => setUsername(e.target.value)}
-              placeholder="请输入用户名"
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label>密码</label>
-            <input
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder="请输入密码"
-              required
-            />
-          </div>
-          {error && <div className="error-message">{error}</div>}
-          <button type="submit" className="login-btn" disabled={loading}>
-            {loading ? '登录中...' : '登录'}
-          </button>
-        </form>
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '20px'
+    }}>
+      <Card
+        style={{
+          width: '100%',
+          maxWidth: 900,
+          boxShadow: '0 8px 24px rgba(0,0,0,0.12)'
+        }}
+      >
+        <Title level={2} style={{ textAlign: 'center', marginBottom: 32 }}>
+          程序员能力模型平台
+        </Title>
 
-        <div className="user-hints">
-          <h3>测试账号（账号密码相同）：</h3>
-          <div className="hints-grid">
-            {roleDescriptions.map((item, index) => (
-              <div key={index} className="hint-item">
-                <strong>{item.role}</strong>
-                <span>{item.desc}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+        <Row gutter={32}>
+          <Col xs={24} md={12}>
+            <Form
+              name="login"
+              onFinish={handleSubmit}
+              autoComplete="off"
+              layout="vertical"
+            >
+              <Form.Item
+                label="用户名"
+                name="username"
+                rules={[{ required: true, message: '请输入用户名' }]}
+              >
+                <Input
+                  prefix={<UserOutlined />}
+                  placeholder="请输入用户名"
+                  size="large"
+                />
+              </Form.Item>
+
+              <Form.Item
+                label="密码"
+                name="password"
+                rules={[{ required: true, message: '请输入密码' }]}
+              >
+                <Input.Password
+                  prefix={<LockOutlined />}
+                  placeholder="请输入密码"
+                  size="large"
+                />
+              </Form.Item>
+
+              {error && (
+                <Form.Item>
+                  <Alert message={error} type="error" showIcon />
+                </Form.Item>
+              )}
+
+              <Form.Item>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  loading={loading}
+                  block
+                  size="large"
+                >
+                  登录
+                </Button>
+              </Form.Item>
+            </Form>
+          </Col>
+
+          <Col xs={24} md={12}>
+            <Card
+              type="inner"
+              title="测试账号（账号密码相同）"
+              size="small"
+            >
+              <Descriptions column={1} size="small">
+                {roleDescriptions.map((item, index) => (
+                  <Descriptions.Item
+                    key={index}
+                    label={<Text strong>{item.role}</Text>}
+                  >
+                    {item.desc}
+                  </Descriptions.Item>
+                ))}
+              </Descriptions>
+            </Card>
+          </Col>
+        </Row>
+      </Card>
     </div>
   );
 }
