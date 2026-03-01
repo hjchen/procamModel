@@ -54,4 +54,17 @@ export class UserController {
   async delete(@Param('id') id: number): Promise<void> {
     return this.userService.delete(id);
   }
+
+  @Put(':id/scores')
+  async updateScores(@Param('id') id: number, @Body() body: {
+    abilityScores: {
+      tech: number;
+      engineering: number;
+      uiux: number;
+      communication: number;
+      problem: number;
+    };
+  }): Promise<User> {
+    return this.userService.updateScores(id, body.abilityScores);
+  }
 }

@@ -93,4 +93,16 @@ export class UserService {
 
     return createdUsers;
   }
+
+  async updateScores(id: number, abilityScores: {
+    tech: number;
+    engineering: number;
+    uiux: number;
+    communication: number;
+    problem: number;
+  }): Promise<User> {
+    const user = await this.findOne(id);
+    user.abilityScores = abilityScores;
+    return this.usersRepository.save(user);
+  }
 }

@@ -43,15 +43,23 @@ export class RoleService {
   }
 
   async update(id: number, roleData: {
-    name: string;
-    description: string;
-    permissionIds: number[];
+    name?: string;
+    description?: string;
+    permissionIds?: number[];
   }): Promise<Role> {
     const role = await this.findOne(id);
-    const permissions = await this.permissionsRepository.findByIds(roleData.permissionIds);
-    role.name = roleData.name;
-    role.description = roleData.description;
-    role.permissions = permissions;
+
+    if (roleData.name !== undefined) {
+      role.name = roleData.name;
+    }
+    if (roleData.description !== undefined) {
+      role.description = roleData.description;
+    }
+    if (roleData.permissionIds !== undefined) {
+      const permissions = await this.permissionsRepository.findByIds(roleData.permissionIds);
+      role.permissions = permissions;
+    }
+
     return this.rolesRepository.save(role);
   }
 

@@ -8,6 +8,8 @@ import { UserModule } from './user/user.module';
 import { RoleModule } from './role/role.module';
 import { PositionModule } from './position/position.module';
 import { RankModule } from './rank/rank.module';
+import { AbilityDimensionModule } from './ability-dimension/ability-dimension.module';
+import { DepartmentModule } from './department/department.module';
 import { User } from './entities/user.entity';
 import { Role } from './entities/role.entity';
 import { Permission } from './entities/permission.entity';
@@ -15,6 +17,8 @@ import { Position } from './entities/position.entity';
 import { AbilityDimension } from './entities/ability-dimension.entity';
 import { Rank } from './entities/rank.entity';
 import { Employee } from './entities/employee.entity';
+import { Department } from './entities/department.entity';
+import { AbilityModule } from './ability/ability.module';
 
 @Module({
   imports: [
@@ -34,6 +38,7 @@ import { Employee } from './entities/employee.entity';
         AbilityDimension,
         Rank,
         Employee,
+        Department,
       ],
       synchronize: true,
     }),
@@ -43,6 +48,9 @@ import { Employee } from './entities/employee.entity';
     RoleModule,
     PositionModule,
     RankModule,
+    AbilityDimensionModule,
+    DepartmentModule,
+    AbilityModule,
   ],
   controllers: [AppController],
   providers: [AppService],
