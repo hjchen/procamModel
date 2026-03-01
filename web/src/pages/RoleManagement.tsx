@@ -1,18 +1,23 @@
 import { useState, useEffect } from 'react';
-import { Table, Button, Modal, Form, Input, Space, Card, message, Tag } from 'antd';
+import { useNavigate } from 'react-router-dom';
+import { Table, Button, Modal, Form, Input, Space, Card, message, Tag, Checkbox, Divider } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, UserAddOutlined, TeamOutlined, LockOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
-import type { Role, User } from '../types';
+import type { Role, User, Permission } from '../types';
 import { api } from '../services/api';
 
 export default function RoleManagement() {
+  const navigate = useNavigate();
   const [roles, setRoles] = useState<Role[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [permissions, setPermissions] = useState<Permission[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [isViewUsersModalOpen, setIsViewUsersModalOpen] = useState(false);
+  const [isPermissionModalOpen, setIsPermissionModalOpen] = useState(false);
   const [editingRole, setEditingRole] = useState<Role | null>(null);
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
+  const [selectedPermissions, setSelectedPermissions] = useState<number[]>([]);
   const [form] = Form.useForm();
   const [userForm] = Form.useForm();
 
@@ -20,6 +25,7 @@ export default function RoleManagement() {
     const fetchData = async () => {
       await loadRoles();
       await loadUsers();
+      await loadPermissions();
     };
     fetchData();
   }, []);
@@ -39,6 +45,15 @@ export default function RoleManagement() {
       setUsers(data);
     } catch (error) {
       message.error('获取用户列表失败');
+    }
+  };
+
+  const loadPermissions = async () => {
+    try {
+      const data = await api.getPermissions();
+      setPermissions(data);
+    } catch (error) {
+      message.error('获取权限列表失败');
     }
   };
 
@@ -111,6 +126,40 @@ export default function RoleManagement() {
     }
   };
 
+  const handlePermissionConfig = async (role: Role) => {
+    try {
+      const roleDetail = await api.getRoleById(role.id as number);
+      setSelectedRole(roleDetail);
+      setSelectedPermissions(roleDetail.permissions?.map((p: Permission) => p.id) || []);
+      setIsPermissionModalOpen(true);
+    } catch (error) {
+      message.error('获取角色权限失败');
+    }
+  };
+
+  const handlePermissionChange = (permissionId: number) => {
+    setSelectedPermissions(prev => {
+      if (prev.includes(permissionId)) {
+        return prev.filter(id => id !== permissionId);
+      } else {
+        return [...prev, permissionId];
+      }
+    });
+  };
+
+  const handlePermissionSubmit = async () => {
+    if (!selectedRole) return;
+
+    try {
+      await api.updateRolePermissions(selectedRole.id as number, selectedPermissions);
+      message.success('权限配置已保存');
+      setIsPermissionModalOpen(false);
+      await loadRoles();
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '更新权限失败');
+    }
+  };
+
   const columns: ColumnsType<Role> = [
     {
       title: '角色名称',
@@ -173,7 +222,7 @@ export default function RoleManagement() {
           <Button
             type="link"
             icon={<LockOutlined />}
-            onClick={() => window.location.href = `/roles/${record.id}`}
+            onClick={() => handlePermissionConfig(record)}
           >
             权限
           </Button>
@@ -355,6 +404,60 @@ export default function RoleManagement() {
             该角色暂无用户
           </div>
         )}
+      </Modal>
+
+      <Modal
+        title={`${selectedRole?.name} - 权限配置`}
+        open={isPermissionModalOpen}
+        onOk={handlePermissionSubmit}
+        onCancel={() => setIsPermissionModalOpen(false)}
+        okText="保存"
+        cancelText="取消"
+        width={700}
+      >
+        <Space direction="vertical" size="large" style={{ width: '100%' }}>
+          <div>
+            <h4 style={{ marginBottom: 16 }}>页面访问权限</h4>
+            <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+              {permissions
+                .filter(p => p.type === 'page')
+                .map(permission => (
+                  <Checkbox
+                    key={permission.id}
+                    checked={selectedPermissions.includes(permission.id as number)}
+                    onChange={() => handlePermissionChange(permission.id as number)}
+                  >
+                    <div>
+                      <div style={{ fontWeight: 500 }}>{permission.name}</div>
+                      <div style={{ fontSize: 12, color: '#999' }}>{permission.description}</div>
+                    </div>
+                  </Checkbox>
+                ))}
+            </Space>
+          </div>
+
+          <Divider style={{ margin: '12px 0' }} />
+
+          <div>
+            <h4 style={{ marginBottom: 16 }}>操作权限</h4>
+            <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+              {permissions
+                .filter(p => p.type === 'action')
+                .map(permission => (
+                  <Checkbox
+                    key={permission.id}
+                    checked={selectedPermissions.includes(permission.id as number)}
+                    onChange={() => handlePermissionChange(permission.id as number)}
+                  >
+                    <div>
+                      <div style={{ fontWeight: 500 }}>{permission.name}</div>
+                      <div style={{ fontSize: 12, color: '#999' }}>{permission.description}</div>
+                    </div>
+                  </Checkbox>
+                ))}
+            </Space>
+          </div>
+        </Space>
       </Modal>
     </Card>
   );

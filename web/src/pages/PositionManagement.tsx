@@ -54,10 +54,11 @@ export default function PositionManagement() {
       cancelText: '取消',
       onOk: async () => {
         try {
+          await api.deletePosition(position.id as number);
           message.success('删除成功');
           await loadPositions();
         } catch (error) {
-          message.error('删除失败');
+          message.error(error instanceof Error ? error.message : '删除失败');
         }
       }
     });
@@ -66,15 +67,43 @@ export default function PositionManagement() {
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
-      message.success(editingPosition ? '更新成功' : '创建成功');
+
+      const abilityDimensions = (values.abilityDimensions || []).map((dim: any) => ({
+        code: dim.id || `${values.code}-${Date.now()}`,
+        title: dim.title,
+        description: dim.description,
+        scores: dim.scores
+      }));
+
+      const positionData = {
+        code: values.code,
+        name: values.name,
+        dimensions: values.dimensions,
+        ranks: values.ranks,
+        status: values.status,
+        abilityDimensions
+      };
+
+      if (editingPosition) {
+        await api.updatePosition(editingPosition.id as number, positionData);
+        message.success('更新成功');
+      } else {
+        await api.createPosition(positionData);
+        message.success('创建成功');
+      }
+
       setIsModalOpen(false);
       await loadPositions();
     } catch (error) {
-      console.error('表单验证失败:', error);
+      message.error(error instanceof Error ? error.message : '保存失败');
     }
   };
 
   const handleAddDimension = () => {
+    if (!editingPosition) {
+      message.warning('请先保存岗位后再添加能力维度');
+      return;
+    }
     setEditingDimension(null);
     dimensionForm.resetFields();
     setIsDimensionModalOpen(true);
@@ -86,15 +115,25 @@ export default function PositionManagement() {
     setIsDimensionModalOpen(true);
   };
 
-  const handleDeleteDimension = (dimensionId: string) => {
+  const handleDeleteDimension = (dimensionId: string | number) => {
     Modal.confirm({
       title: '确定要删除该能力维度吗?',
       okText: '确定',
       cancelText: '取消',
-      onOk: () => {
-        const currentValues = form.getFieldsValue();
-        const updatedDimensions = currentValues.abilityDimensions.filter((d: AbilityDimension) => d.id !== dimensionId);
-        form.setFieldsValue({ abilityDimensions: updatedDimensions });
+      onOk: async () => {
+        try {
+          if (typeof dimensionId === 'number') {
+            await api.deleteAbilityDimension(dimensionId);
+            message.success('删除成功');
+            await loadPositions();
+          } else {
+            const currentValues = form.getFieldsValue();
+            const updatedDimensions = currentValues.abilityDimensions.filter((d: AbilityDimension) => d.id !== dimensionId);
+            form.setFieldsValue({ abilityDimensions: updatedDimensions });
+          }
+        } catch (error) {
+          message.error(error instanceof Error ? error.message : '删除失败');
+        }
       }
     });
   };
@@ -102,26 +141,41 @@ export default function PositionManagement() {
   const handleDimensionSubmit = async () => {
     try {
       const values = await dimensionForm.validateFields();
-      const currentValues = form.getFieldsValue();
-      let updatedDimensions: AbilityDimension[];
 
-      if (editingDimension) {
-        updatedDimensions = currentValues.abilityDimensions.map((d: AbilityDimension) =>
-          d.id === editingDimension.id ? { ...values, id: editingDimension.id } : d
-        );
-      } else {
-        const newDimension = {
-          ...values,
-          id: `${currentValues.id}-${Date.now()}`
-        };
-        updatedDimensions = [...(currentValues.abilityDimensions || []), newDimension];
+      if (!editingPosition) {
+        message.warning('请先保存岗位后再添加能力维度');
+        return;
       }
 
-      form.setFieldsValue({ abilityDimensions: updatedDimensions });
+      const dimensionData = {
+        title: values.title,
+        description: values.description,
+        scores: values.scores
+      };
+
+      if (editingDimension && typeof editingDimension.id === 'number') {
+        await api.updateAbilityDimension(editingDimension.id, dimensionData);
+        message.success('更新能力维度成功');
+      } else {
+        const code = `${editingPosition.code}-${Date.now()}`;
+        await api.createAbilityDimension({
+          ...dimensionData,
+          code,
+          positionId: editingPosition.id
+        });
+        message.success('添加能力维度成功');
+      }
+
       setIsDimensionModalOpen(false);
-      message.success(editingDimension ? '更新能力维度成功' : '添加能力维度成功');
+      await loadPositions();
+
+      const updatedPosition = positions.find(p => p.id === editingPosition.id);
+      if (updatedPosition) {
+        setEditingPosition(updatedPosition);
+        form.setFieldsValue(updatedPosition);
+      }
     } catch (error) {
-      console.error('表单验证失败:', error);
+      message.error(error instanceof Error ? error.message : '保存失败');
     }
   };
 

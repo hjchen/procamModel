@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { Form, Input, Button, Card, Typography, Row, Col, Alert, Descriptions } from 'antd';
+import { Form, Input, Button, Card, Typography } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { storage } from '../utils/storage';
 import type { User } from '../types';
 import { api } from '../services/api';
 
-const { Title, Text } = Typography;
+const { Title } = Typography;
 
 interface LoginProps {
   onLoginSuccess: (user: User) => void;
@@ -31,106 +31,246 @@ export default function Login({ onLoginSuccess }: LoginProps) {
     }
   };
 
-  const roleDescriptions = [
-    { role: '系统管理员', desc: '系统配置、权限管理、数据备份' },
-    { role: 'HR管理员', desc: '模型配置、报告查看、人才盘点' },
-    { role: '部门管理者', desc: '团队能力查看、发展计划审批' },
-    { role: '评估人', desc: '完成对他人的能力评估' },
-    { role: '张三', desc: '查看个人报告、制定发展计划' },
-    { role: '数据分析师', desc: '深度数据分析、报告导出' }
-  ];
-
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4c1d95 100%)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: '20px'
+      padding: '20px',
+      position: 'relative',
+      overflow: 'hidden'
     }}>
+      {/* AI风格装饰元素 */}
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: `
+          radial-gradient(circle at 20% 30%, rgba(124, 58, 237, 0.15) 0%, transparent 50%),
+          radial-gradient(circle at 80% 70%, rgba(168, 85, 247, 0.15) 0%, transparent 50%)
+        `,
+        pointerEvents: 'none'
+      }} />
+
+      {/* 代码片段装饰 - 左上 */}
+      <div style={{
+        position: 'absolute',
+        top: '8%',
+        left: '3%',
+        fontSize: '13px',
+        fontFamily: 'Consolas, Monaco, monospace',
+        color: 'rgba(168, 85, 247, 0.3)',
+        lineHeight: '1.8',
+        pointerEvents: 'none'
+      }}>
+        <div>{'import { AI } from "@future/core";'}</div>
+        <div>{''}</div>
+        <div>{'function analyzeSkills(dev) {'}</div>
+        <div>{'  const model = AI.load();'}</div>
+        <div>{'  return model.predict(dev);'}</div>
+        <div>{'}'}</div>
+      </div>
+
+      {/* 代码片段装饰 - 右下 */}
+      <div style={{
+        position: 'absolute',
+        bottom: '12%',
+        right: '5%',
+        fontSize: '13px',
+        fontFamily: 'Consolas, Monaco, monospace',
+        color: 'rgba(168, 85, 247, 0.3)',
+        lineHeight: '1.8',
+        pointerEvents: 'none'
+      }}>
+        <div>{'const capabilities = {'}</div>
+        <div>{'  ai: "GPT-4",'}</div>
+        <div>{'  ml: "TensorFlow",'}</div>
+        <div>{'  vision: "OpenCV",'}</div>
+        <div>{'  nlp: "Transformers"'}</div>
+        <div>{'};'}</div>
+      </div>
+
+      {/* 代码片段装饰 - 右上 */}
+      <div style={{
+        position: 'absolute',
+        top: '15%',
+        right: '8%',
+        fontSize: '12px',
+        fontFamily: 'Consolas, Monaco, monospace',
+        color: 'rgba(196, 181, 253, 0.25)',
+        lineHeight: '1.8',
+        pointerEvents: 'none'
+      }}>
+        <div>{'// Neural Network'}</div>
+        <div>{'model.compile({'}</div>
+        <div>{'  optimizer: "adam",'}</div>
+        <div>{'  loss: "categorical"'}</div>
+        <div>{'});'}</div>
+      </div>
+
+      {/* 代码片段装饰 - 左下 */}
+      <div style={{
+        position: 'absolute',
+        bottom: '20%',
+        left: '5%',
+        fontSize: '12px',
+        fontFamily: 'Consolas, Monaco, monospace',
+        color: 'rgba(196, 181, 253, 0.25)',
+        lineHeight: '1.8',
+        pointerEvents: 'none'
+      }}>
+        <div>{'interface Developer {'}</div>
+        <div>{'  skills: string[];'}</div>
+        <div>{'  level: number;'}</div>
+        <div>{'  aiScore: float;'}</div>
+        <div>{'}'}</div>
+      </div>
+
+      {/* 浮动圆点装饰 */}
+      <div style={{
+        position: 'absolute',
+        top: '25%',
+        left: '15%',
+        width: '6px',
+        height: '6px',
+        borderRadius: '50%',
+        background: 'rgba(168, 85, 247, 0.5)',
+        boxShadow: '0 0 20px rgba(168, 85, 247, 0.5)',
+        pointerEvents: 'none'
+      }} />
+      <div style={{
+        position: 'absolute',
+        top: '60%',
+        right: '20%',
+        width: '4px',
+        height: '4px',
+        borderRadius: '50%',
+        background: 'rgba(196, 181, 253, 0.5)',
+        boxShadow: '0 0 15px rgba(196, 181, 253, 0.5)',
+        pointerEvents: 'none'
+      }} />
+      <div style={{
+        position: 'absolute',
+        bottom: '35%',
+        left: '25%',
+        width: '5px',
+        height: '5px',
+        borderRadius: '50%',
+        background: 'rgba(124, 58, 237, 0.5)',
+        boxShadow: '0 0 18px rgba(124, 58, 237, 0.5)',
+        pointerEvents: 'none'
+      }} />
+      <div style={{
+        position: 'absolute',
+        top: '45%',
+        right: '12%',
+        width: '4px',
+        height: '4px',
+        borderRadius: '50%',
+        background: 'rgba(168, 85, 247, 0.5)',
+        boxShadow: '0 0 16px rgba(168, 85, 247, 0.5)',
+        pointerEvents: 'none'
+      }} />
+
       <Card
         style={{
           width: '100%',
-          maxWidth: 900,
-          boxShadow: '0 8px 24px rgba(0,0,0,0.12)'
+          maxWidth: 420,
+          boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+          background: 'rgba(30, 27, 75, 0.85)',
+          border: '1px solid rgba(168, 85, 247, 0.3)',
+          backdropFilter: 'blur(20px)'
         }}
       >
-        <Title level={2} style={{ textAlign: 'center', marginBottom: 32 }}>
+        <Title level={2} style={{
+          textAlign: 'center',
+          marginBottom: 32,
+          background: 'linear-gradient(135deg, #a855f7 0%, #c084fc 100%)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          fontWeight: 700
+        }}>
           程序员能力模型平台
         </Title>
 
-        <Row gutter={32}>
-          <Col xs={24} md={12}>
-            <Form
-              name="login"
-              onFinish={handleSubmit}
-              autoComplete="off"
-              layout="vertical"
+        <Form
+          name="login"
+          onFinish={handleSubmit}
+          autoComplete="off"
+          layout="vertical"
+        >
+          <Form.Item
+            label={<span style={{ color: '#e9d5ff' }}>用户名</span>}
+            name="username"
+            rules={[{ required: true, message: '请输入用户名' }]}
+          >
+            <Input
+              prefix={<UserOutlined style={{ color: '#a78bfa' }} />}
+              placeholder="请输入用户名"
+              size="large"
+              style={{
+                background: 'rgba(49, 46, 129, 0.5)',
+                border: '1px solid rgba(168, 85, 247, 0.3)',
+                color: '#e9d5ff'
+              }}
+            />
+          </Form.Item>
+
+          <Form.Item
+            label={<span style={{ color: '#e9d5ff' }}>密码</span>}
+            name="password"
+            rules={[{ required: true, message: '请输入密码' }]}
+          >
+            <Input.Password
+              prefix={<LockOutlined style={{ color: '#a78bfa' }} />}
+              placeholder="请输入密码"
+              size="large"
+              style={{
+                background: 'rgba(49, 46, 129, 0.5)',
+                border: '1px solid rgba(168, 85, 247, 0.3)',
+                color: '#e9d5ff'
+              }}
+            />
+          </Form.Item>
+
+          {error && (
+            <div style={{
+              padding: '12px',
+              marginBottom: '16px',
+              background: 'rgba(239, 68, 68, 0.15)',
+              border: '1px solid rgba(239, 68, 68, 0.4)',
+              borderRadius: '8px',
+              color: '#fca5a5',
+              fontSize: '14px'
+            }}>
+              {error}
+            </div>
+          )}
+
+          <Form.Item>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={loading}
+              block
+              size="large"
+              style={{
+                height: '44px',
+                fontSize: '16px',
+                fontWeight: 600,
+                background: 'linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)',
+                border: 'none',
+                boxShadow: '0 4px 15px rgba(124, 58, 237, 0.4)'
+              }}
             >
-              <Form.Item
-                label="用户名"
-                name="username"
-                rules={[{ required: true, message: '请输入用户名' }]}
-              >
-                <Input
-                  prefix={<UserOutlined />}
-                  placeholder="请输入用户名"
-                  size="large"
-                />
-              </Form.Item>
-
-              <Form.Item
-                label="密码"
-                name="password"
-                rules={[{ required: true, message: '请输入密码' }]}
-              >
-                <Input.Password
-                  prefix={<LockOutlined />}
-                  placeholder="请输入密码"
-                  size="large"
-                />
-              </Form.Item>
-
-              {error && (
-                <Form.Item>
-                  <Alert message={error} type="error" showIcon />
-                </Form.Item>
-              )}
-
-              <Form.Item>
-                <Button
-                  type="primary"
-                  htmlType="submit"
-                  loading={loading}
-                  block
-                  size="large"
-                >
-                  登录
-                </Button>
-              </Form.Item>
-            </Form>
-          </Col>
-
-          <Col xs={24} md={12}>
-            <Card
-              type="inner"
-              title="测试账号（账号密码相同）"
-              size="small"
-            >
-              <Descriptions column={1} size="small">
-                {roleDescriptions.map((item, index) => (
-                  <Descriptions.Item
-                    key={index}
-                    label={<Text strong>{item.role}</Text>}
-                  >
-                    {item.desc}
-                  </Descriptions.Item>
-                ))}
-              </Descriptions>
-            </Card>
-          </Col>
-        </Row>
+              登录
+            </Button>
+          </Form.Item>
+        </Form>
       </Card>
     </div>
   );

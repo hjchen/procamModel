@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Card, Checkbox, Button, Space, Divider, message } from 'antd';
+import { ArrowLeftOutlined } from '@ant-design/icons';
 import { storage } from '../utils/storage';
 import type { Role, Permission } from '../types';
-import { useParams, useNavigate } from 'react-router-dom';
-import './RolePermission.css';
 
 export default function RolePermission() {
   const { id } = useParams<{ id: string }>();
@@ -20,7 +21,7 @@ export default function RolePermission() {
 
   const loadRole = () => {
     const roles = storage.get<Role[]>('ROLES') || [];
-    const foundRole = roles.find(r => r.id === id);
+    const foundRole = roles.find(r => String(r.id) === id);
     setRole(foundRole || null);
     if (foundRole) {
       setSelectedPermissions(foundRole.permissions);
@@ -42,8 +43,7 @@ export default function RolePermission() {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = () => {
     if (!role) return;
 
     const updatedRole = {
@@ -52,13 +52,12 @@ export default function RolePermission() {
     };
 
     const roles = storage.get<Role[]>('ROLES') || [];
-    const newRoles = roles.map(r => r.id === role.id ? updatedRole : r);
+    const newRoles = roles.map(r => String(r.id) === String(role.id) ? updatedRole : r);
     storage.set('ROLES', newRoles);
 
-    // 更新该角色下所有用户的权限
     const users = storage.get<any[]>('USERS') || [];
     const updatedUsers = users.map(user => {
-      if (user.role === role.id) {
+      if (String(user.role) === String(role.id)) {
         return {
           ...user,
           permissions: selectedPermissions
@@ -68,73 +67,83 @@ export default function RolePermission() {
     });
     storage.set('USERS', updatedUsers);
 
+    message.success('权限配置已保存');
     navigate('/roles');
   };
 
   if (!role) {
-    return <div className="role-permission">角色不存在</div>;
+    return (
+      <Card>
+        <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+          角色不存在
+        </div>
+      </Card>
+    );
   }
 
+  const pagePermissions = permissions.filter(p => p.type === 'page');
+  const actionPermissions = permissions.filter(p => p.type === 'action');
+
   return (
-    <div className="role-permission">
-      <div className="page-header">
-        <h2>{role.name} - 权限配置</h2>
-        <button className="btn-primary" onClick={() => navigate('/roles')}>返回</button>
-      </div>
+    <Card
+      title={`${role.name} - 权限配置`}
+      extra={
+        <Button
+          icon={<ArrowLeftOutlined />}
+          onClick={() => navigate('/roles')}
+        >
+          返回
+        </Button>
+      }
+    >
+      <Space direction="vertical" size="large" style={{ width: '100%' }}>
+        <div>
+          <h3 style={{ marginBottom: 16 }}>页面访问权限</h3>
+          <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+            {pagePermissions.map(permission => (
+              <Checkbox
+                key={permission.id}
+                checked={selectedPermissions.includes(permission.id)}
+                onChange={() => handlePermissionChange(permission.id)}
+              >
+                <div>
+                  <div style={{ fontWeight: 500 }}>{permission.name}</div>
+                  <div style={{ fontSize: 12, color: '#999' }}>{permission.description}</div>
+                </div>
+              </Checkbox>
+            ))}
+          </Space>
+        </div>
 
-      <div className="permission-container">
-        <form onSubmit={handleSubmit}>
-          <div className="permission-section">
-            <h3>页面访问权限</h3>
-            <div className="permission-list">
-              {permissions
-                .filter(p => p.type === 'page')
-                .map(permission => (
-                  <div key={permission.id} className="permission-item">
-                    <input
-                      type="checkbox"
-                      id={`permission-${permission.id}`}
-                      checked={selectedPermissions.includes(permission.id)}
-                      onChange={() => handlePermissionChange(permission.id)}
-                    />
-                    <label htmlFor={`permission-${permission.id}`}>
-                      <span className="permission-name">{permission.name}</span>
-                      <span className="permission-desc">{permission.description}</span>
-                    </label>
-                  </div>
-                ))
-              }
-            </div>
-          </div>
+        <Divider />
 
-          <div className="permission-section">
-            <h3>操作权限</h3>
-            <div className="permission-list">
-              {permissions
-                .filter(p => p.type === 'action')
-                .map(permission => (
-                  <div key={permission.id} className="permission-item">
-                    <input
-                      type="checkbox"
-                      id={`permission-${permission.id}`}
-                      checked={selectedPermissions.includes(permission.id)}
-                      onChange={() => handlePermissionChange(permission.id)}
-                    />
-                    <label htmlFor={`permission-${permission.id}`}>
-                      <span className="permission-name">{permission.name}</span>
-                      <span className="permission-desc">{permission.description}</span>
-                    </label>
-                  </div>
-                ))
-              }
-            </div>
-          </div>
+        <div>
+          <h3 style={{ marginBottom: 16 }}>操作权限</h3>
+          <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+            {actionPermissions.map(permission => (
+              <Checkbox
+                key={permission.id}
+                checked={selectedPermissions.includes(permission.id)}
+                onChange={() => handlePermissionChange(permission.id)}
+              >
+                <div>
+                  <div style={{ fontWeight: 500 }}>{permission.name}</div>
+                  <div style={{ fontSize: 12, color: '#999' }}>{permission.description}</div>
+                </div>
+              </Checkbox>
+            ))}
+          </Space>
+        </div>
 
-          <div className="form-actions">
-            <button type="submit" className="btn-primary">保存配置</button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <Divider />
+
+        <div style={{ textAlign: 'right' }}>
+          <Space>
+            <Button onClick={() => navigate('/roles')}>取消</Button>
+            <Button type="primary" onClick={handleSubmit}>保存配置</Button>
+          </Space>
+        </div>
+      </Space>
+    </Card>
   );
 }

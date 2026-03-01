@@ -1,29 +1,80 @@
 import { useState, useEffect } from 'react';
 import ReactECharts from 'echarts-for-react';
+import { Card, Row, Col, Statistic, Progress, Button, Slider, message, Spin } from 'antd';
+import { EditOutlined, SaveOutlined } from '@ant-design/icons';
 import { storage } from '../utils/storage';
-import type { Employee } from '../types';
-import './PersonalRadar.css';
+import { api } from '../services/api';
+import type { User } from '../types';
+
+interface AbilityScores {
+  tech: number;
+  engineering: number;
+  uiux: number;
+  communication: number;
+  problem: number;
+}
+
+interface MyAbilityData {
+  name: string;
+  position: string;
+  positionName: string;
+  rank: string;
+  scores: AbilityScores;
+}
 
 export default function PersonalRadar() {
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [myData, setMyData] = useState<MyAbilityData | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editScores, setEditScores] = useState<AbilityScores | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadEmployees();
+    loadMyAbilityData();
   }, []);
 
-  const loadEmployees = () => {
-    const data = storage.get<Employee[]>('EMPLOYEES') || [];
-    setEmployees(data);
-    if (data.length > 0) {
-      setSelectedEmployee(data[0]);
+  const loadMyAbilityData = async () => {
+    try {
+      setLoading(true);
+      const data = await api.getMyAbilityScores();
+      setMyData(data);
+    } catch (error) {
+      message.error('获取能力数据失败');
+      console.error('获取能力数据失败:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getRadarOption = () => {
-    if (!selectedEmployee) return {};
+  const handleEdit = () => {
+    if (myData) {
+      setEditScores({ ...myData.scores });
+      setIsEditing(true);
+    }
+  };
 
-    const { scores } = selectedEmployee;
+  const handleSave = async () => {
+    if (!editScores) return;
+
+    try {
+      await api.updateMyAbilityScores(editScores);
+      setMyData({ ...myData!, scores: editScores });
+      setIsEditing(false);
+      message.success('保存成功');
+    } catch (error) {
+      message.error('保存失败');
+      console.error('保存失败:', error);
+    }
+  };
+
+  const handleCancel = () => {
+    setEditScores(null);
+    setIsEditing(false);
+  };
+
+  const getRadarOption = () => {
+    if (!myData) return {};
+
+    const scores = isEditing && editScores ? editScores : myData.scores;
     const standardScores = [85, 80, 75, 75, 80];
     const teamAvgScores = [75, 72, 70, 80, 76];
 
@@ -73,96 +124,100 @@ export default function PersonalRadar() {
   };
 
   const calculateOverallScore = () => {
-    if (!selectedEmployee) return 0;
-    const { scores } = selectedEmployee;
+    if (!myData) return 0;
+    const scores = isEditing && editScores ? editScores : myData.scores;
     return Math.round((scores.tech + scores.engineering + scores.uiux + scores.communication + scores.problem) / 5);
   };
 
+  const abilities = [
+    { name: '技术深度', key: 'tech' as const },
+    { name: '工程能力', key: 'engineering' as const },
+    { name: 'UI/UX能力', key: 'uiux' as const },
+    { name: '沟通协作', key: 'communication' as const },
+    { name: '问题解决', key: 'problem' as const },
+  ];
+
+  if (loading) {
+    return (
+      <div style={{ textAlign: 'center', padding: '100px 0' }}>
+        <Spin size="large" />
+      </div>
+    );
+  }
+
+  if (!myData) {
+    return (
+      <div style={{ textAlign: 'center', padding: '100px 0' }}>
+        <p>暂无能力数据</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="personal-radar">
-      <div className="page-header">
-        <h2>个人能力分析</h2>
-        <select
-          value={selectedEmployee?.id || ''}
-          onChange={(e) => {
-            const emp = employees.find(e => e.id === Number(e.target.value));
-            setSelectedEmployee(emp || null);
-          }}
-        >
-          {employees.map(emp => (
-            <option key={emp.id} value={emp.id}>
-              {emp.name} - {emp.rank}
-            </option>
-          ))}
-        </select>
+    <div>
+      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h2 style={{ margin: 0 }}>个人能力分析</h2>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {!isEditing && (
+            <Button type="primary" icon={<EditOutlined />} onClick={handleEdit}>
+              编辑打分
+            </Button>
+          )}
+          {isEditing && (
+            <>
+              <Button type="primary" icon={<SaveOutlined />} onClick={handleSave}>
+                保存
+              </Button>
+              <Button onClick={handleCancel}>取消</Button>
+            </>
+          )}
+        </div>
       </div>
 
-      {selectedEmployee && (
-        <div className="content-grid">
-          <div className="chart-container">
+      <Row gutter={[16, 16]}>
+        <Col span={16}>
+          <Card>
             <ReactECharts option={getRadarOption()} style={{ height: '500px' }} />
-          </div>
+          </Card>
+        </Col>
 
-          <div className="info-panel">
-            <div className="info-card">
-              <h3>能力概览</h3>
-              <div className="stat-item">
-                <span className="label">综合得分</span>
-                <span className="value">{calculateOverallScore()}/100</span>
-              </div>
-              <div className="stat-item">
-                <span className="label">岗位</span>
-                <span className="value">{selectedEmployee.position}</span>
-              </div>
-              <div className="stat-item">
-                <span className="label">职级</span>
-                <span className="value">{selectedEmployee.rank}</span>
-              </div>
+        <Col span={8}>
+          <Card title="能力概览" style={{ marginBottom: 16 }}>
+            <Statistic title="综合得分" value={calculateOverallScore()} suffix="/ 100" />
+            <div style={{ marginTop: 16 }}>
+              <p><strong>姓名：</strong>{myData.name}</p>
+              <p><strong>岗位：</strong>{myData.positionName}</p>
+              <p><strong>职级：</strong>{myData.rank}</p>
             </div>
+          </Card>
 
-            <div className="info-card">
-              <h3>能力详情</h3>
-              <div className="ability-list">
-                <div className="ability-item">
-                  <span>技术深度</span>
-                  <div className="progress-bar">
-                    <div className="progress" style={{ width: `${selectedEmployee.scores.tech}%` }}></div>
+          <Card title={isEditing ? "编辑能力评分" : "能力详情"}>
+            {abilities.map(ability => {
+              const score = isEditing && editScores ? editScores[ability.key] : myData.scores[ability.key];
+              return (
+                <div key={ability.key} style={{ marginBottom: 16 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <span>{ability.name}</span>
+                    <span>{score}</span>
                   </div>
-                  <span>{selectedEmployee.scores.tech}</span>
+                  {isEditing && editScores ? (
+                    <Slider
+                      min={0}
+                      max={100}
+                      value={score}
+                      onChange={(value) => {
+                        setEditScores({ ...editScores, [ability.key]: value });
+                      }}
+                    />
+                  ) : (
+                    <Progress percent={score} showInfo={false} />
+                  )}
                 </div>
-                <div className="ability-item">
-                  <span>工程能力</span>
-                  <div className="progress-bar">
-                    <div className="progress" style={{ width: `${selectedEmployee.scores.engineering}%` }}></div>
-                  </div>
-                  <span>{selectedEmployee.scores.engineering}</span>
-                </div>
-                <div className="ability-item">
-                  <span>UI/UX能力</span>
-                  <div className="progress-bar">
-                    <div className="progress" style={{ width: `${selectedEmployee.scores.uiux}%` }}></div>
-                  </div>
-                  <span>{selectedEmployee.scores.uiux}</span>
-                </div>
-                <div className="ability-item">
-                  <span>沟通协作</span>
-                  <div className="progress-bar">
-                    <div className="progress" style={{ width: `${selectedEmployee.scores.communication}%` }}></div>
-                  </div>
-                  <span>{selectedEmployee.scores.communication}</span>
-                </div>
-                <div className="ability-item">
-                  <span>问题解决</span>
-                  <div className="progress-bar">
-                    <div className="progress" style={{ width: `${selectedEmployee.scores.problem}%` }}></div>
-                  </div>
-                  <span>{selectedEmployee.scores.problem}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+              );
+            })}
+          </Card>
+        </Col>
+      </Row>
     </div>
   );
 }
