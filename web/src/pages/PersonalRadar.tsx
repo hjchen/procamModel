@@ -6,12 +6,11 @@ import { storage } from '../utils/storage';
 import { api } from '../services/api';
 import type { User } from '../types';
 
-interface AbilityScores {
-  tech: number;
-  engineering: number;
-  uiux: number;
-  communication: number;
-  problem: number;
+interface AbilityDimension {
+  code: string;
+  title: string;
+  description: string;
+  standardScore: number;
 }
 
 interface MyAbilityData {
@@ -19,13 +18,14 @@ interface MyAbilityData {
   position: string;
   positionName: string;
   rank: string;
-  scores: AbilityScores;
+  scores: Record<string, number>;
+  abilityDimensions: AbilityDimension[];
 }
 
 export default function PersonalRadar() {
   const [myData, setMyData] = useState<MyAbilityData | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [editScores, setEditScores] = useState<AbilityScores | null>(null);
+  const [editScores, setEditScores] = useState<Record<string, number> | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -72,11 +72,18 @@ export default function PersonalRadar() {
   };
 
   const getRadarOption = () => {
-    if (!myData) return {};
+    if (!myData || !myData.abilityDimensions.length) return {};
 
     const scores = isEditing && editScores ? editScores : myData.scores;
-    const standardScores = [85, 80, 75, 75, 80];
-    const teamAvgScores = [75, 72, 70, 80, 76];
+    const dimensions = myData.abilityDimensions;
+
+    const indicators = dimensions.map(dim => ({
+      name: dim.title,
+      max: 100
+    }));
+
+    const myScores = dimensions.map(dim => scores[dim.code] || 0);
+    const standardScores = dimensions.map(dim => dim.standardScore);
 
     return {
       title: {
@@ -84,24 +91,18 @@ export default function PersonalRadar() {
         left: 'center'
       },
       legend: {
-        data: ['我的能力', '岗位标准', '团队平均'],
+        data: ['我的能力', '岗位标准'],
         bottom: 10
       },
       radar: {
-        indicator: [
-          { name: '技术深度', max: 100 },
-          { name: '工程能力', max: 100 },
-          { name: 'UI/UX能力', max: 100 },
-          { name: '沟通协作', max: 100 },
-          { name: '问题解决', max: 100 }
-        ],
+        indicator: indicators,
         radius: '65%'
       },
       series: [{
         type: 'radar',
         data: [
           {
-            value: [scores.tech, scores.engineering, scores.uiux, scores.communication, scores.problem],
+            value: myScores,
             name: '我的能力',
             areaStyle: { color: 'rgba(24, 144, 255, 0.3)' },
             lineStyle: { color: '#1890FF', width: 2 }
@@ -111,12 +112,6 @@ export default function PersonalRadar() {
             name: '岗位标准',
             lineStyle: { color: '#52C41A', type: 'dashed', width: 2 },
             symbol: 'none'
-          },
-          {
-            value: teamAvgScores,
-            name: '团队平均',
-            lineStyle: { color: '#FAAD14', type: 'dotted', width: 2 },
-            symbol: 'none'
           }
         ]
       }]
@@ -124,18 +119,12 @@ export default function PersonalRadar() {
   };
 
   const calculateOverallScore = () => {
-    if (!myData) return 0;
+    if (!myData || !myData.abilityDimensions.length) return 0;
     const scores = isEditing && editScores ? editScores : myData.scores;
-    return Math.round((scores.tech + scores.engineering + scores.uiux + scores.communication + scores.problem) / 5);
+    const dimensions = myData.abilityDimensions;
+    const total = dimensions.reduce((sum, dim) => sum + (scores[dim.code] || 0), 0);
+    return Math.round(total / dimensions.length);
   };
-
-  const abilities = [
-    { name: '技术深度', key: 'tech' as const },
-    { name: '工程能力', key: 'engineering' as const },
-    { name: 'UI/UX能力', key: 'uiux' as const },
-    { name: '沟通协作', key: 'communication' as const },
-    { name: '问题解决', key: 'problem' as const },
-  ];
 
   if (loading) {
     return (
@@ -192,13 +181,16 @@ export default function PersonalRadar() {
           </Card>
 
           <Card title={isEditing ? "编辑能力评分" : "能力详情"}>
-            {abilities.map(ability => {
-              const score = isEditing && editScores ? editScores[ability.key] : myData.scores[ability.key];
+            {myData.abilityDimensions.map(dimension => {
+              const score = isEditing && editScores ? editScores[dimension.code] : myData.scores[dimension.code] || 0;
               return (
-                <div key={ability.key} style={{ marginBottom: 16 }}>
+                <div key={dimension.code} style={{ marginBottom: 16 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <span>{ability.name}</span>
+                    <span>{dimension.title}</span>
                     <span>{score}</span>
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#666', marginBottom: 4 }}>
+                    {dimension.description}
                   </div>
                   {isEditing && editScores ? (
                     <Slider
@@ -206,12 +198,15 @@ export default function PersonalRadar() {
                       max={100}
                       value={score}
                       onChange={(value) => {
-                        setEditScores({ ...editScores, [ability.key]: value });
+                        setEditScores({ ...editScores, [dimension.code]: value });
                       }}
                     />
                   ) : (
                     <Progress percent={score} showInfo={false} />
                   )}
+                  <div style={{ fontSize: '12px', color: '#999', marginTop: 4 }}>
+                    岗位标准: {dimension.standardScore}
+                  </div>
                 </div>
               );
             })}

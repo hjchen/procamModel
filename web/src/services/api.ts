@@ -95,7 +95,7 @@ export const api = {
     return response.json();
   },
 
-  async batchCreateUsers(users: Array<{ username: string; name: string; email: string }>, roleId: number) {
+  async batchCreateUsers(users: Array<{ username: string; name: string; email: string; positionId: number; rank: string }>, roleId: number) {
     const response = await fetch(`${API_BASE_URL}/users/batch`, {
       method: 'POST',
       headers: {
@@ -308,6 +308,22 @@ export const api = {
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.message || '获取部门列表失败');
+    }
+
+    return response.json();
+  },
+
+  async deleteUser(id: number) {
+    const response = await fetch(`${API_BASE_URL}/users/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || '删除用户失败');
     }
 
     return response.json();

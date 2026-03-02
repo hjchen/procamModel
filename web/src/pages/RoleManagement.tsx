@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Table, Button, Modal, Form, Input, Space, Card, message, Tag, Checkbox, Divider } from 'antd';
+import { Table, Button, Modal, Form, Input, Space, Card, message, Tag, Checkbox, Divider, Select } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, UserAddOutlined, TeamOutlined, LockOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
-import type { Role, User, Permission } from '../types';
+import type { Role, User, Permission, Position, Rank } from '../types';
 import { api } from '../services/api';
 
 export default function RoleManagement() {
@@ -11,6 +11,8 @@ export default function RoleManagement() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [permissions, setPermissions] = useState<Permission[]>([]);
+  const [positions, setPositions] = useState<Position[]>([]);
+  const [ranks, setRanks] = useState<Rank[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [isViewUsersModalOpen, setIsViewUsersModalOpen] = useState(false);
@@ -26,6 +28,8 @@ export default function RoleManagement() {
       await loadRoles();
       await loadUsers();
       await loadPermissions();
+      await loadPositions();
+      await loadRanks();
     };
     fetchData();
   }, []);
@@ -54,6 +58,24 @@ export default function RoleManagement() {
       setPermissions(data);
     } catch (error) {
       message.error('获取权限列表失败');
+    }
+  };
+
+  const loadPositions = async () => {
+    try {
+      const data = await api.getPositions();
+      setPositions(data);
+    } catch (error) {
+      message.error('获取岗位列表失败');
+    }
+  };
+
+  const loadRanks = async () => {
+    try {
+      const data = await api.getRanks();
+      setRanks(data);
+    } catch (error) {
+      message.error('获取职级列表失败');
     }
   };
 
@@ -160,6 +182,24 @@ export default function RoleManagement() {
     }
   };
 
+  const handleDeleteUser = (user: User) => {
+    Modal.confirm({
+      title: '确定要删除该用户吗?',
+      content: `用户: ${user.name} (${user.username})`,
+      okText: '确定',
+      cancelText: '取消',
+      onOk: async () => {
+        try {
+          await api.deleteUser(user.id);
+          message.success('删除成功');
+          await loadUsers();
+        } catch (error) {
+          message.error(error instanceof Error ? error.message : '删除失败');
+        }
+      }
+    });
+  };
+
   const columns: ColumnsType<Role> = [
     {
       title: '角色名称',
@@ -255,6 +295,20 @@ export default function RoleManagement() {
         <Tag color={isActive ? 'green' : 'red'}>
           {isActive ? '激活' : '禁用'}
         </Tag>
+      ),
+    },
+    {
+      title: '操作',
+      key: 'action',
+      render: (_, record) => (
+        <Button
+          type="link"
+          danger
+          icon={<DeleteOutlined />}
+          onClick={() => handleDeleteUser(record)}
+        >
+          删除
+        </Button>
       ),
     },
   ];
@@ -356,6 +410,32 @@ export default function RoleManagement() {
                       ]}
                     >
                       <Input placeholder="邮箱" />
+                    </Form.Item>
+                    <Form.Item
+                      {...restField}
+                      name={[name, 'positionId']}
+                      rules={[{ required: true, message: '请选择岗位' }]}
+                    >
+                      <Select placeholder="岗位" style={{ width: 150 }}>
+                        {positions.map(pos => (
+                          <Select.Option key={pos.id} value={pos.id}>
+                            {pos.name}
+                          </Select.Option>
+                        ))}
+                      </Select>
+                    </Form.Item>
+                    <Form.Item
+                      {...restField}
+                      name={[name, 'rank']}
+                      rules={[{ required: true, message: '请选择职级' }]}
+                    >
+                      <Select placeholder="职级" style={{ width: 120 }}>
+                        {ranks.map(rank => (
+                          <Select.Option key={rank.level} value={rank.level}>
+                            {rank.level}
+                          </Select.Option>
+                        ))}
+                      </Select>
                     </Form.Item>
                     <Button
                       type="link"

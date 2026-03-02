@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../entities/user.entity';
 import { Position } from '../entities/position.entity';
+import { AbilityDimension } from '../entities/ability-dimension.entity';
 
 @Injectable()
 export class AbilityService {
@@ -11,6 +12,8 @@ export class AbilityService {
     private userRepository: Repository<User>,
     @InjectRepository(Position)
     private positionRepository: Repository<Position>,
+    @InjectRepository(AbilityDimension)
+    private abilityDimensionRepository: Repository<AbilityDimension>,
   ) {}
 
   async getMyScores(userId: number) {
@@ -25,16 +28,13 @@ export class AbilityService {
     const position = user.positionId
       ? await this.positionRepository.findOne({
           where: { id: user.positionId },
+          relations: ['abilityDimensions'],
         })
       : null;
 
-    const scores = user.abilityScores || {
-      tech: 0,
-      engineering: 0,
-      uiux: 0,
-      communication: 0,
-      problem: 0,
-    };
+    const abilityDimensions = position?.abilityDimensions || [];
+
+    const scores = user.abilityScores || {};
 
     return {
       name: user.name,
@@ -42,6 +42,12 @@ export class AbilityService {
       positionName: position ? position.name : '未分配',
       rank: user.rank || '未设置',
       scores,
+      abilityDimensions: abilityDimensions.map(dim => ({
+        code: dim.code,
+        title: dim.title,
+        description: dim.description,
+        standardScore: dim.scores[user.rank] || 0,
+      })),
     };
   }
 

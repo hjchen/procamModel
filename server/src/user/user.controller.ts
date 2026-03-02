@@ -35,6 +35,8 @@ export class UserController {
       username: string;
       name: string;
       email: string;
+      positionId: number;
+      rank: string;
     }>;
     roleId: number;
   }): Promise<User[]> {

@@ -71,19 +71,23 @@ export class UserService {
     username: string;
     name: string;
     email: string;
+    positionId: number;
+    rank: string;
   }>, roleId: number): Promise<User[]> {
     const createdUsers: User[] = [];
 
     for (const userData of usersData) {
       const existingUser = await this.usersRepository.findOne({ where: { username: userData.username } });
       if (!existingUser) {
-        const hashedPassword = await bcrypt.hash(userData.username, 10); // 密码默认为用户名
+        const hashedPassword = await bcrypt.hash(userData.username, 10);
         const user = this.usersRepository.create({
           username: userData.username,
           password: hashedPassword,
           name: userData.name,
           email: userData.email,
           roleId,
+          positionId: userData.positionId,
+          rank: userData.rank,
           permissions: [],
         });
         const savedUser = await this.usersRepository.save(user);

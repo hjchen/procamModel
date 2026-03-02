@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Table, Button, Modal, Form, Input, Select, Space, Card, message, Tag } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, TeamOutlined, UserAddOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, TeamOutlined, UserAddOutlined, BarChartOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { api } from '../services/api';
 
@@ -15,16 +15,20 @@ interface Department {
 export default function DepartmentManagement() {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [users, setUsers] = useState<any[]>([]);
+  const [positions, setPositions] = useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
+  const [isAbilityModalOpen, setIsAbilityModalOpen] = useState(false);
   const [editingDepartment, setEditingDepartment] = useState<Department | null>(null);
   const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
+  const [departmentMembers, setDepartmentMembers] = useState<any[]>([]);
   const [form] = Form.useForm();
   const [memberForm] = Form.useForm();
 
   useEffect(() => {
     loadDepartments();
     loadUsers();
+    loadPositions();
   }, []);
 
   const loadDepartments = async () => {
@@ -42,6 +46,15 @@ export default function DepartmentManagement() {
       setUsers(data);
     } catch (error) {
       message.error('获取用户列表失败');
+    }
+  };
+
+  const loadPositions = async () => {
+    try {
+      const data = await api.getPositions();
+      setPositions(data);
+    } catch (error) {
+      message.error('获取岗位列表失败');
     }
   };
 
@@ -116,6 +129,17 @@ export default function DepartmentManagement() {
     }
   };
 
+  const handleViewAbilities = async (department: Department) => {
+    try {
+      setSelectedDepartment(department);
+      const members = await api.getDepartmentMembers(department.id);
+      setDepartmentMembers(members);
+      setIsAbilityModalOpen(true);
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '获取部门成员失败');
+    }
+  };
+
   const getManagerName = (managerId?: number) => {
     const manager = users.find(u => u.id === managerId);
     return manager ? manager.name : '-';
@@ -164,6 +188,13 @@ export default function DepartmentManagement() {
             onClick={() => handleManageMembers(record)}
           >
             管理成员
+          </Button>
+          <Button
+            type="link"
+            icon={<BarChartOutlined />}
+            onClick={() => handleViewAbilities(record)}
+          >
+            能力列表
           </Button>
           <Button
             type="link"
@@ -274,6 +305,86 @@ export default function DepartmentManagement() {
             />
           </Form.Item>
         </Form>
+      </Modal>
+
+      <Modal
+        title={`${selectedDepartment?.name} - 部门能力列表`}
+        open={isAbilityModalOpen}
+        onCancel={() => setIsAbilityModalOpen(false)}
+        footer={[
+          <Button key="close" type="primary" onClick={() => setIsAbilityModalOpen(false)}>
+            关闭
+          </Button>
+        ]}
+        width={1200}
+      >
+        <Table
+          dataSource={departmentMembers}
+          rowKey="id"
+          pagination={false}
+          scroll={{ x: 1000 }}
+        >
+          <Table.Column title="姓名" dataIndex="name" key="name" fixed="left" width={100} />
+          <Table.Column
+            title="岗位"
+            dataIndex="positionId"
+            key="positionId"
+            width={120}
+            render={(positionId) => {
+              const position = positions.find(p => p.id === positionId);
+              return position?.name || '-';
+            }}
+          />
+          <Table.Column title="职级" dataIndex="rank" key="rank" width={80} />
+          <Table.Column
+            title="技术能力"
+            key="tech"
+            width={90}
+            render={(_, record: any) => record.abilityScores?.tech || '-'}
+          />
+          <Table.Column
+            title="工程能力"
+            key="engineering"
+            width={90}
+            render={(_, record: any) => record.abilityScores?.engineering || '-'}
+          />
+          <Table.Column
+            title="UI/UX"
+            key="uiux"
+            width={90}
+            render={(_, record: any) => record.abilityScores?.uiux || '-'}
+          />
+          <Table.Column
+            title="沟通能力"
+            key="communication"
+            width={90}
+            render={(_, record: any) => record.abilityScores?.communication || '-'}
+          />
+          <Table.Column
+            title="问题解决"
+            key="problem"
+            width={90}
+            render={(_, record: any) => record.abilityScores?.problem || '-'}
+          />
+          <Table.Column
+            title="领导力"
+            key="leadership"
+            width={90}
+            render={(_, record: any) => record.abilityScores?.leadership || '-'}
+          />
+          <Table.Column
+            title="创新能力"
+            key="innovation"
+            width={90}
+            render={(_, record: any) => record.abilityScores?.innovation || '-'}
+          />
+          <Table.Column
+            title="学习能力"
+            key="learning"
+            width={90}
+            render={(_, record: any) => record.abilityScores?.learning || '-'}
+          />
+        </Table>
       </Modal>
     </Card>
   );
