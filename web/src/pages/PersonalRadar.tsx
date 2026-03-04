@@ -128,7 +128,7 @@ export default function PersonalRadar() {
 
   if (loading) {
     return (
-      <div style={{ textAlign: 'center', padding: '100px 0' }}>
+      <div className="text-center py-24">
         <Spin size="large" />
       </div>
     );
@@ -136,7 +136,7 @@ export default function PersonalRadar() {
 
   if (!myData) {
     return (
-      <div style={{ textAlign: 'center', padding: '100px 0' }}>
+      <div className="text-center py-24">
         <p>暂无能力数据</p>
       </div>
     );
@@ -144,9 +144,9 @@ export default function PersonalRadar() {
 
   return (
     <div>
-      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h2 style={{ margin: 0 }}>个人能力分析</h2>
-        <div style={{ display: 'flex', gap: 8 }}>
+      <div className="mb-4 flex justify-between items-center">
+        <h2 className="m-0">个人能力分析</h2>
+        <div className="flex gap-2">
           {!isEditing && (
             <Button type="primary" icon={<EditOutlined />} onClick={handleEdit}>
               编辑打分
@@ -166,14 +166,14 @@ export default function PersonalRadar() {
       <Row gutter={[16, 16]}>
         <Col span={16}>
           <Card>
-            <ReactECharts option={getRadarOption()} style={{ height: '500px' }} />
+            <ReactECharts option={getRadarOption()} className="h-[500px]" />
           </Card>
         </Col>
 
         <Col span={8}>
-          <Card title="能力概览" style={{ marginBottom: 16 }}>
+          <Card title="能力概览" className="mb-4">
             <Statistic title="综合得分" value={calculateOverallScore()} suffix="/ 100" />
-            <div style={{ marginTop: 16 }}>
+            <div className="mt-4">
               <p><strong>姓名：</strong>{myData.name}</p>
               <p><strong>岗位：</strong>{myData.positionName}</p>
               <p><strong>职级：</strong>{myData.rank}</p>
@@ -184,12 +184,12 @@ export default function PersonalRadar() {
             {myData.abilityDimensions.map(dimension => {
               const score = isEditing && editScores ? editScores[dimension.code] : myData.scores[dimension.code] || 0;
               return (
-                <div key={dimension.code} style={{ marginBottom: 16 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                <div key={dimension.code} className="mb-4">
+                  <div className="flex justify-between mb-1">
                     <span>{dimension.title}</span>
                     <span>{score}</span>
                   </div>
-                  <div style={{ fontSize: '12px', color: '#666', marginBottom: 4 }}>
+                  <div className="text-xs text-gray-600 mb-1">
                     {dimension.description}
                   </div>
                   {isEditing && editScores ? (
@@ -204,7 +204,7 @@ export default function PersonalRadar() {
                   ) : (
                     <Progress percent={score} showInfo={false} />
                   )}
-                  <div style={{ fontSize: '12px', color: '#999', marginTop: 4 }}>
+                  <div className="text-xs text-gray-500 mt-1">
                     岗位标准: {dimension.standardScore}
                   </div>
                 </div>

@@ -32,168 +32,9 @@ export default function Login({ onLoginSuccess }: LoginProps) {
   };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4c1d95 100%)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '20px',
-      position: 'relative',
-      overflow: 'hidden'
-    }}>
-      {/* AI风格装饰元素 */}
-      <div style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: `
-          radial-gradient(circle at 20% 30%, rgba(124, 58, 237, 0.15) 0%, transparent 50%),
-          radial-gradient(circle at 80% 70%, rgba(168, 85, 247, 0.15) 0%, transparent 50%)
-        `,
-        pointerEvents: 'none'
-      }} />
-
-      {/* 代码片段装饰 - 左上 */}
-      <div style={{
-        position: 'absolute',
-        top: '8%',
-        left: '3%',
-        fontSize: '13px',
-        fontFamily: 'Consolas, Monaco, monospace',
-        color: 'rgba(168, 85, 247, 0.3)',
-        lineHeight: '1.8',
-        pointerEvents: 'none'
-      }}>
-        <div>{'import { AI } from "@future/core";'}</div>
-        <div>{''}</div>
-        <div>{'function analyzeSkills(dev) {'}</div>
-        <div>{'  const model = AI.load();'}</div>
-        <div>{'  return model.predict(dev);'}</div>
-        <div>{'}'}</div>
-      </div>
-
-      {/* 代码片段装饰 - 右下 */}
-      <div style={{
-        position: 'absolute',
-        bottom: '12%',
-        right: '5%',
-        fontSize: '13px',
-        fontFamily: 'Consolas, Monaco, monospace',
-        color: 'rgba(168, 85, 247, 0.3)',
-        lineHeight: '1.8',
-        pointerEvents: 'none'
-      }}>
-        <div>{'const capabilities = {'}</div>
-        <div>{'  ai: "GPT-4",'}</div>
-        <div>{'  ml: "TensorFlow",'}</div>
-        <div>{'  vision: "OpenCV",'}</div>
-        <div>{'  nlp: "Transformers"'}</div>
-        <div>{'};'}</div>
-      </div>
-
-      {/* 代码片段装饰 - 右上 */}
-      <div style={{
-        position: 'absolute',
-        top: '15%',
-        right: '8%',
-        fontSize: '12px',
-        fontFamily: 'Consolas, Monaco, monospace',
-        color: 'rgba(196, 181, 253, 0.25)',
-        lineHeight: '1.8',
-        pointerEvents: 'none'
-      }}>
-        <div>{'// Neural Network'}</div>
-        <div>{'model.compile({'}</div>
-        <div>{'  optimizer: "adam",'}</div>
-        <div>{'  loss: "categorical"'}</div>
-        <div>{'});'}</div>
-      </div>
-
-      {/* 代码片段装饰 - 左下 */}
-      <div style={{
-        position: 'absolute',
-        bottom: '20%',
-        left: '5%',
-        fontSize: '12px',
-        fontFamily: 'Consolas, Monaco, monospace',
-        color: 'rgba(196, 181, 253, 0.25)',
-        lineHeight: '1.8',
-        pointerEvents: 'none'
-      }}>
-        <div>{'interface Developer {'}</div>
-        <div>{'  skills: string[];'}</div>
-        <div>{'  level: number;'}</div>
-        <div>{'  aiScore: float;'}</div>
-        <div>{'}'}</div>
-      </div>
-
-      {/* 浮动圆点装饰 */}
-      <div style={{
-        position: 'absolute',
-        top: '25%',
-        left: '15%',
-        width: '6px',
-        height: '6px',
-        borderRadius: '50%',
-        background: 'rgba(168, 85, 247, 0.5)',
-        boxShadow: '0 0 20px rgba(168, 85, 247, 0.5)',
-        pointerEvents: 'none'
-      }} />
-      <div style={{
-        position: 'absolute',
-        top: '60%',
-        right: '20%',
-        width: '4px',
-        height: '4px',
-        borderRadius: '50%',
-        background: 'rgba(196, 181, 253, 0.5)',
-        boxShadow: '0 0 15px rgba(196, 181, 253, 0.5)',
-        pointerEvents: 'none'
-      }} />
-      <div style={{
-        position: 'absolute',
-        bottom: '35%',
-        left: '25%',
-        width: '5px',
-        height: '5px',
-        borderRadius: '50%',
-        background: 'rgba(124, 58, 237, 0.5)',
-        boxShadow: '0 0 18px rgba(124, 58, 237, 0.5)',
-        pointerEvents: 'none'
-      }} />
-      <div style={{
-        position: 'absolute',
-        top: '45%',
-        right: '12%',
-        width: '4px',
-        height: '4px',
-        borderRadius: '50%',
-        background: 'rgba(168, 85, 247, 0.5)',
-        boxShadow: '0 0 16px rgba(168, 85, 247, 0.5)',
-        pointerEvents: 'none'
-      }} />
-
-      <Card
-        style={{
-          width: '100%',
-          maxWidth: 420,
-          boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
-          background: 'rgba(30, 27, 75, 0.85)',
-          border: '1px solid rgba(168, 85, 247, 0.3)',
-          backdropFilter: 'blur(20px)'
-        }}
-      >
-        <Title level={2} style={{
-          textAlign: 'center',
-          marginBottom: 32,
-          background: 'linear-gradient(135deg, #a855f7 0%, #c084fc 100%)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          fontWeight: 700
-        }}>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-800 to-violet-900 flex items-center justify-center p-5">
+      <Card className="w-[600px] max-w-md shadow-2xl bg-white/10 border border-violet-400/20 backdrop-blur-xl drop-shadow-2xl">
+        <Title level={2} className="text-center mb-8 bg-gradient-to-r from-violet-400 to-purple-400 bg-clip-text text-transparent font-bold">
           程序员能力模型平台
         </Title>
 
@@ -204,49 +45,33 @@ export default function Login({ onLoginSuccess }: LoginProps) {
           layout="vertical"
         >
           <Form.Item
-            label={<span style={{ color: '#e9d5ff' }}>用户名</span>}
+            label={<span className="text-violet-200">用户名</span>}
             name="username"
             rules={[{ required: true, message: '请输入用户名' }]}
           >
             <Input
-              prefix={<UserOutlined style={{ color: '#a78bfa' }} />}
+              prefix={<UserOutlined className="text-violet-300" />}
               placeholder="请输入用户名"
               size="large"
-              style={{
-                background: 'rgba(49, 46, 129, 0.5)',
-                border: '1px solid rgba(168, 85, 247, 0.3)',
-                color: '#e9d5ff'
-              }}
+              className="bg-purple-900/30 border-violet-400/30 text-violet-100 placeholder:text-violet-300/60"
             />
           </Form.Item>
 
           <Form.Item
-            label={<span style={{ color: '#e9d5ff' }}>密码</span>}
+            label={<span className="text-violet-200">密码</span>}
             name="password"
             rules={[{ required: true, message: '请输入密码' }]}
           >
             <Input.Password
-              prefix={<LockOutlined style={{ color: '#a78bfa' }} />}
+              prefix={<LockOutlined className="text-violet-300" />}
               placeholder="请输入密码"
               size="large"
-              style={{
-                background: 'rgba(49, 46, 129, 0.5)',
-                border: '1px solid rgba(168, 85, 247, 0.3)',
-                color: '#e9d5ff'
-              }}
+              className="bg-purple-900/30 border-violet-400/30 text-violet-100 placeholder:text-violet-300/60"
             />
           </Form.Item>
 
           {error && (
-            <div style={{
-              padding: '12px',
-              marginBottom: '16px',
-              background: 'rgba(239, 68, 68, 0.15)',
-              border: '1px solid rgba(239, 68, 68, 0.4)',
-              borderRadius: '8px',
-              color: '#fca5a5',
-              fontSize: '14px'
-            }}>
+            <div className="p-3 mb-4 bg-red-500/15 border border-red-500/40 rounded-lg text-red-300 text-sm">
               {error}
             </div>
           )}
@@ -258,14 +83,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
               loading={loading}
               block
               size="large"
-              style={{
-                height: '44px',
-                fontSize: '16px',
-                fontWeight: 600,
-                background: 'linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)',
-                border: 'none',
-                boxShadow: '0 4px 15px rgba(124, 58, 237, 0.4)'
-              }}
+              className="h-11 text-base font-semibold bg-gradient-to-r from-violet-600 to-violet-500 border-none shadow-[0_4px_15px_rgba(124,58,237,0.4)] hover:from-violet-700 hover:to-violet-600"
             >
               登录
             </Button>
