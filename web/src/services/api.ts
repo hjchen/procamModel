@@ -413,4 +413,140 @@ export const api = {
 
     return response.json();
   },
+
+  async getGroups(departmentId: number) {
+    const response = await fetch(`${API_BASE_URL}/groups?departmentId=${departmentId}`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || '获取分组列表失败');
+    }
+
+    return response.json();
+  },
+
+  async getGroup(id: number) {
+    const response = await fetch(`${API_BASE_URL}/groups/${id}`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || '获取分组详情失败');
+    }
+
+    return response.json();
+  },
+
+  async createGroup(groupData: any) {
+    const response = await fetch(`${API_BASE_URL}/groups`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+      body: JSON.stringify(groupData),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || '创建分组失败');
+    }
+
+    return response.json();
+  },
+
+  async updateGroup(id: number, groupData: any) {
+    const response = await fetch(`${API_BASE_URL}/groups/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+      body: JSON.stringify(groupData),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || '更新分组失败');
+    }
+
+    return response.json();
+  },
+
+  async updateGroupMembers(id: number, memberIds: number[]) {
+    const response = await fetch(`${API_BASE_URL}/groups/${id}/members`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+      body: JSON.stringify({ memberIds }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || '更新分组成员失败');
+    }
+
+    return response.json();
+  },
+
+  async addGroupMembers(id: number, memberIds: number[]) {
+    const response = await fetch(`${API_BASE_URL}/groups/${id}/members`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+      body: JSON.stringify({ memberIds }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || '添加分组成员失败');
+    }
+
+    return response.json();
+  },
+
+  async removeGroupMembers(id: number, memberIds: number[]) {
+    const response = await fetch(`${API_BASE_URL}/groups/${id}/members`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+      body: JSON.stringify({ memberIds }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || '移除分组成员失败');
+    }
+
+    return response.json();
+  },
+
+  async deleteGroup(id: number) {
+    const response = await fetch(`${API_BASE_URL}/groups/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || '删除分组失败');
+    }
+
+    return response.json();
+  },
 };

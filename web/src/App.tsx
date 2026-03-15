@@ -12,6 +12,7 @@ import TeamRadar from './pages/TeamRadar';
 import RoleManagement from './pages/RoleManagement';
 import RolePermission from './pages/RolePermission';
 import DepartmentManagement from './pages/DepartmentManagement';
+import GroupDetail from './pages/GroupDetail';
 import './App.css';
 
 const { Header, Sider, Content } = Layout;
@@ -147,6 +148,7 @@ function App() {
               <Route path="/positions" element={<PositionManagement />} />
               <Route path="/ranks" element={<RankConfig />} />
               <Route path="/departments" element={<DepartmentManagement />} />
+              <Route path="/group/:id" element={<GroupDetail />} />
               <Route path="/roles" element={<RoleManagement />} />
               <Route path="/roles/:id" element={<RolePermission />} />
               <Route path="/personal" element={<PersonalRadar />} />
