@@ -34,7 +34,7 @@ export class AbilityService {
 
     const abilityDimensions = position?.abilityDimensions || [];
 
-    const scores = user.abilityScores || {};
+    const scores = user.selfAbilityScores || user.abilityScores || {};
 
     return {
       name: user.name,
@@ -42,7 +42,7 @@ export class AbilityService {
       positionName: position ? position.name : '未分配',
       rank: user.rank || '未设置',
       scores,
-      abilityDimensions: abilityDimensions.map(dim => ({
+      abilityDimensions: abilityDimensions.map((dim) => ({
         code: dim.code,
         title: dim.title,
         description: dim.description,
@@ -60,7 +60,7 @@ export class AbilityService {
       throw new NotFoundException('用户不存在');
     }
 
-    user.abilityScores = scores;
+    user.selfAbilityScores = scores;
     await this.userRepository.save(user);
 
     return { message: '更新成功', scores };

@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { Role } from './role.entity';
 
 @Entity('users')
@@ -38,13 +44,13 @@ export class User {
   rank: string;
 
   @Column({ type: 'json', nullable: true })
-  abilityScores: {
-    tech: number;
-    engineering: number;
-    uiux: number;
-    communication: number;
-    problem: number;
-  };
+  abilityScores: Record<string, number> | null;
+
+  @Column({ type: 'json', nullable: true })
+  selfAbilityScores: Record<string, number> | null;
+
+  @Column({ type: 'json', nullable: true })
+  managerAbilityScores: Record<string, number> | null;
 
   @Column({ default: true })
   isActive: boolean;
@@ -52,6 +58,10 @@ export class User {
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    onUpdate: 'CURRENT_TIMESTAMP',
+  })
   updatedAt: Date;
 }

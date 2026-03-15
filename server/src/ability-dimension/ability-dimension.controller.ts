@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AbilityDimensionService } from './ability-dimension.service';
 
@@ -8,22 +17,29 @@ export class AbilityDimensionController {
   constructor(private abilityDimensionService: AbilityDimensionService) {}
 
   @Post()
-  async create(@Body() dimensionData: {
-    code: string;
-    title: string;
-    description: string;
-    scores: Record<string, number>;
-    positionId: number;
-  }) {
+  async create(
+    @Body()
+    dimensionData: {
+      code: string;
+      title: string;
+      description: string;
+      scores: Record<string, number>;
+      positionId: number;
+    },
+  ) {
     return this.abilityDimensionService.create(dimensionData);
   }
 
   @Put(':id')
-  async update(@Param('id') id: number, @Body() dimensionData: {
-    title: string;
-    description: string;
-    scores: Record<string, number>;
-  }) {
+  async update(
+    @Param('id') id: number,
+    @Body()
+    dimensionData: {
+      title: string;
+      description: string;
+      scores: Record<string, number>;
+    },
+  ) {
     return this.abilityDimensionService.update(id, dimensionData);
   }
 

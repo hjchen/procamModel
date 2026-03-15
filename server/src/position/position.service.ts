@@ -18,9 +18,9 @@ export class PositionService {
   }
 
   async findOne(id: number): Promise<Position> {
-    const position = await this.positionsRepository.findOne({ 
+    const position = await this.positionsRepository.findOne({
       where: { id },
-      relations: ['abilityDimensions'] 
+      relations: ['abilityDimensions'],
     });
     if (!position) {
       throw new NotFoundException('岗位不存在');
@@ -41,7 +41,9 @@ export class PositionService {
       scores: Record<string, number>;
     }>;
   }): Promise<Position> {
-    const existingPosition = await this.positionsRepository.findOne({ where: { code: positionData.code } });
+    const existingPosition = await this.positionsRepository.findOne({
+      where: { code: positionData.code },
+    });
     if (existingPosition) {
       throw new NotFoundException('岗位编码已存在');
     }
@@ -71,19 +73,22 @@ export class PositionService {
     return this.findOne(savedPosition.id);
   }
 
-  async update(id: number, positionData: {
-    name: string;
-    dimensions: number;
-    ranks: string;
-    status: 'active' | 'inactive';
-    abilityDimensions: Array<{
-      id?: number;
-      code: string;
-      title: string;
-      description: string;
-      scores: Record<string, number>;
-    }>;
-  }): Promise<Position> {
+  async update(
+    id: number,
+    positionData: {
+      name: string;
+      dimensions: number;
+      ranks: string;
+      status: 'active' | 'inactive';
+      abilityDimensions: Array<{
+        id?: number;
+        code: string;
+        title: string;
+        description: string;
+        scores: Record<string, number>;
+      }>;
+    },
+  ): Promise<Position> {
     const position = await this.findOne(id);
     position.name = positionData.name;
     position.dimensions = positionData.dimensions;

@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Put, Delete, Param, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Put,
+  Delete,
+  Param,
+  UseGuards,
+} from '@nestjs/common';
 import { PositionService } from './position.service';
 import { AuthGuard } from '@nestjs/passport';
 
@@ -18,36 +27,43 @@ export class PositionController {
   }
 
   @Post()
-  create(@Body() positionData: {
-    code: string;
-    name: string;
-    dimensions: number;
-    ranks: string;
-    status: 'active' | 'inactive';
-    abilityDimensions: Array<{
+  create(
+    @Body()
+    positionData: {
       code: string;
-      title: string;
-      description: string;
-      scores: Record<string, number>;
-    }>;
-  }) {
+      name: string;
+      dimensions: number;
+      ranks: string;
+      status: 'active' | 'inactive';
+      abilityDimensions: Array<{
+        code: string;
+        title: string;
+        description: string;
+        scores: Record<string, number>;
+      }>;
+    },
+  ) {
     return this.positionService.create(positionData);
   }
 
   @Put(':id')
-  update(@Param('id') id: number, @Body() positionData: {
-    name: string;
-    dimensions: number;
-    ranks: string;
-    status: 'active' | 'inactive';
-    abilityDimensions: Array<{
-      id?: number;
-      code: string;
-      title: string;
-      description: string;
-      scores: Record<string, number>;
-    }>;
-  }) {
+  update(
+    @Param('id') id: number,
+    @Body()
+    positionData: {
+      name: string;
+      dimensions: number;
+      ranks: string;
+      status: 'active' | 'inactive';
+      abilityDimensions: Array<{
+        id?: number;
+        code: string;
+        title: string;
+        description: string;
+        scores: Record<string, number>;
+      }>;
+    },
+  ) {
     return this.positionService.update(id, positionData);
   }
 

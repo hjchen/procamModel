@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { Layout, Menu, Avatar, Dropdown, Button } from 'antd';
-import { HomeOutlined, TeamOutlined, BarChartOutlined, UserOutlined, SettingOutlined, LogoutOutlined, SafetyOutlined, ApartmentOutlined } from '@ant-design/icons';
+import { Layout, Menu, Avatar, Dropdown } from 'antd';
+import { HomeOutlined, TeamOutlined, BarChartOutlined, UserOutlined, SettingOutlined, LogoutOutlined, SafetyOutlined, ApartmentOutlined, InteractionOutlined } from '@ant-design/icons';
 import { initDefaultData, storage } from './utils/storage';
 import type { User } from './types';
 import Login from './pages/Login';
@@ -13,9 +13,20 @@ import RoleManagement from './pages/RoleManagement';
 import RolePermission from './pages/RolePermission';
 import DepartmentManagement from './pages/DepartmentManagement';
 import GroupDetail from './pages/GroupDetail';
+import GroupPeerReview from './pages/GroupPeerReview';
 import './App.css';
 
 const { Header, Sider, Content } = Layout;
+
+const PAGE_PERMISSION_MAP: Record<string, string[]> = {
+  '/positions': ['page:positions', 'position:read'],
+  '/ranks': ['page:ranks'],
+  '/departments': ['page:departments'],
+  '/roles': ['page:roles', 'role:read'],
+  '/personal': ['page:personal'],
+  '/group-peer-review': ['page:group-peer-review'],
+  '/team': ['page:team'],
+};
 
 function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -42,6 +53,13 @@ function App() {
     return <Login onLoginSuccess={handleLoginSuccess} />;
   }
 
+  const hasPagePermission = (path: string) => {
+    const permissionNames = PAGE_PERMISSION_MAP[path] || [];
+    return permissionNames.some((permissionName) =>
+      currentUser.permissions?.includes(permissionName),
+    );
+  };
+
   const getMenuItems = () => {
     const items = [
       {
@@ -51,23 +69,38 @@ function App() {
       },
     ];
 
-    if (currentUser.role === 'admin' || currentUser.role === 'hr') {
+    if (hasPagePermission('/positions')) {
       items.push(
         {
           key: '/positions',
           icon: <SettingOutlined />,
           label: <Link to="/positions">岗位管理</Link>,
         },
+      );
+    }
+
+    if (hasPagePermission('/ranks')) {
+      items.push(
         {
           key: '/ranks',
           icon: <BarChartOutlined />,
           label: <Link to="/ranks">职级配置</Link>,
         },
+      );
+    }
+
+    if (hasPagePermission('/departments')) {
+      items.push(
         {
           key: '/departments',
           icon: <ApartmentOutlined />,
           label: <Link to="/departments">部门管理</Link>,
         },
+      );
+    }
+
+    if (hasPagePermission('/roles')) {
+      items.push(
         {
           key: '/roles',
           icon: <SafetyOutlined />,
@@ -76,13 +109,23 @@ function App() {
       );
     }
 
-    items.push({
-      key: '/personal',
-      icon: <UserOutlined />,
-      label: <Link to="/personal">个人能力</Link>,
-    });
+    if (hasPagePermission('/personal')) {
+      items.push({
+        key: '/personal',
+        icon: <UserOutlined />,
+        label: <Link to="/personal">个人能力</Link>,
+      });
+    }
 
-    if (currentUser.role === 'admin' || currentUser.role === 'hr' || currentUser.role === 'manager' || currentUser.role === 'analyst') {
+    if (hasPagePermission('/group-peer-review')) {
+      items.push({
+        key: '/group-peer-review',
+        icon: <InteractionOutlined />,
+        label: <Link to="/group-peer-review">分组互评</Link>,
+      });
+    }
+
+    if (hasPagePermission('/team')) {
       items.push({
         key: '/team',
         icon: <TeamOutlined />,
@@ -144,7 +187,7 @@ function App() {
           </Header>
           <Content style={{ margin: '24px 16px', padding: 24, background: '#fff' }}>
             <Routes>
-              <Route path="/" element={<Home user={currentUser} />} />
+              <Route path="/" element={<Home user={currentUser} hasPagePermission={hasPagePermission} />} />
               <Route path="/positions" element={<PositionManagement />} />
               <Route path="/ranks" element={<RankConfig />} />
               <Route path="/departments" element={<DepartmentManagement />} />
@@ -152,6 +195,7 @@ function App() {
               <Route path="/roles" element={<RoleManagement />} />
               <Route path="/roles/:id" element={<RolePermission />} />
               <Route path="/personal" element={<PersonalRadar />} />
+              <Route path="/group-peer-review" element={<GroupPeerReview />} />
               <Route path="/team" element={<TeamRadar />} />
             </Routes>
           </Content>
@@ -173,7 +217,13 @@ function getRoleName(role: string) {
   return roleMap[role] || role;
 }
 
-function Home({ user }: { user: User }) {
+function Home({
+  user,
+  hasPagePermission,
+}: {
+  user: User;
+  hasPagePermission: (path: string) => boolean;
+}) {
   const getAvailableCards = () => {
     const allCards = [
       { path: '/positions', icon: <SettingOutlined />, title: '岗位管理', desc: '配置和管理岗位类型', roles: ['admin', 'hr'] },
@@ -181,10 +231,17 @@ function Home({ user }: { user: User }) {
       { path: '/departments', icon: <ApartmentOutlined />, title: '部门管理', desc: '管理部门和成员', roles: ['admin', 'hr'] },
       { path: '/roles', icon: <SafetyOutlined />, title: '角色管理', desc: '管理角色和权限配置', roles: ['admin', 'hr'] },
       { path: '/personal', icon: <UserOutlined />, title: '个人能力', desc: '查看个人能力雷达图', roles: ['admin', 'hr', 'manager', 'evaluator', 'employee', 'analyst'] },
-      { path: '/team', icon: <TeamOutlined />, title: '部门能力', desc: '查看部门能力分析', roles: ['admin', 'hr', 'manager', 'analyst'] }
+      { path: '/group-peer-review', icon: <InteractionOutlined />, title: '分组互评', desc: '对同组成员进行能力互评', roles: ['admin', 'hr', 'manager', 'evaluator', 'employee', 'analyst'] },
+      {
+        path: '/team',
+        icon: <TeamOutlined />,
+        title: '部门能力',
+        desc: '查看部门能力分析',
+        roles: ['admin', 'hr', 'manager', 'analyst'],
+      }
     ];
 
-    return allCards.filter(card => card.roles.includes(user.role));
+    return allCards.filter(card => hasPagePermission(card.path));
   };
 
   return (

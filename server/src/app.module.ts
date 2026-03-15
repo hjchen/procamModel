@@ -20,6 +20,7 @@ import { Rank } from './entities/rank.entity';
 import { Employee } from './entities/employee.entity';
 import { Department } from './entities/department.entity';
 import { Group } from './entities/group.entity';
+import { GroupPeerReview } from './entities/group-peer-review.entity';
 import { AbilityModule } from './ability/ability.module';
 
 @Module({
@@ -42,10 +43,18 @@ import { AbilityModule } from './ability/ability.module';
         Employee,
         Department,
         Group,
+        GroupPeerReview,
       ],
       synchronize: true,
     }),
-    TypeOrmModule.forFeature([Role, Permission, User, Position, AbilityDimension, Rank]),
+    TypeOrmModule.forFeature([
+      Role,
+      Permission,
+      User,
+      Position,
+      AbilityDimension,
+      Rank,
+    ]),
     AuthModule,
     UserModule,
     RoleModule,

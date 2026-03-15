@@ -21,12 +21,17 @@ export class AbilityDimensionService {
     return this.abilityDimensionsRepository.save(dimension);
   }
 
-  async update(id: number, dimensionData: {
-    title: string;
-    description: string;
-    scores: Record<string, number>;
-  }): Promise<AbilityDimension> {
-    const dimension = await this.abilityDimensionsRepository.findOne({ where: { id } });
+  async update(
+    id: number,
+    dimensionData: {
+      title: string;
+      description: string;
+      scores: Record<string, number>;
+    },
+  ): Promise<AbilityDimension> {
+    const dimension = await this.abilityDimensionsRepository.findOne({
+      where: { id },
+    });
     if (!dimension) {
       throw new NotFoundException('能力维度不存在');
     }
@@ -39,7 +44,9 @@ export class AbilityDimensionService {
   }
 
   async delete(id: number): Promise<void> {
-    const dimension = await this.abilityDimensionsRepository.findOne({ where: { id } });
+    const dimension = await this.abilityDimensionsRepository.findOne({
+      where: { id },
+    });
     if (!dimension) {
       throw new NotFoundException('能力维度不存在');
     }

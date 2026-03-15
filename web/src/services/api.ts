@@ -146,6 +146,27 @@ export const api = {
     return response.json();
   },
 
+  async updateUserAbilityScores(
+    userId: number,
+    abilityScores: Record<string, number>,
+  ) {
+    const response = await fetch(`${API_BASE_URL}/users/${userId}/scores`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+      body: JSON.stringify({ abilityScores }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || '保存评分失败');
+    }
+
+    return response.json();
+  },
+
   async getPermissions() {
     const response = await fetch(`${API_BASE_URL}/roles/permissions/all`, {
       headers: {
@@ -529,6 +550,43 @@ export const api = {
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.message || '移除分组成员失败');
+    }
+
+    return response.json();
+  },
+
+  async getMyPeerReviewTargets() {
+    const response = await fetch(`${API_BASE_URL}/groups/peer-review/targets`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || '获取分组互评数据失败');
+    }
+
+    return response.json();
+  },
+
+  async savePeerReviewScore(data: {
+    groupId: number;
+    targetUserId: number;
+    scores: Record<string, number>;
+  }) {
+    const response = await fetch(`${API_BASE_URL}/groups/peer-review/scores`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || '保存互评分数失败');
     }
 
     return response.json();

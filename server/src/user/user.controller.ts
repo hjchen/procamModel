@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { UserService } from './user.service';
 import { User } from '../entities/user.entity';
@@ -19,36 +29,46 @@ export class UserController {
   }
 
   @Post()
-  async create(@Body() userData: {
-    username: string;
-    password: string;
-    name: string;
-    email: string;
-    roleId: number;
-  }): Promise<User> {
+  async create(
+    @Body()
+    userData: {
+      username: string;
+      password: string;
+      name: string;
+      email: string;
+      roleId: number;
+    },
+  ): Promise<User> {
     return this.userService.create(userData);
   }
 
   @Post('batch')
-  async batchCreate(@Body() body: {
-    users: Array<{
-      username: string;
-      name: string;
-      email: string;
-      positionId: number;
-      rank: string;
-    }>;
-    roleId: number;
-  }): Promise<User[]> {
+  async batchCreate(
+    @Body()
+    body: {
+      users: Array<{
+        username: string;
+        name: string;
+        email: string;
+        positionId: number;
+        rank: string;
+      }>;
+      roleId: number;
+    },
+  ): Promise<User[]> {
     return this.userService.batchCreate(body.users, body.roleId);
   }
 
   @Put(':id')
-  async update(@Param('id') id: number, @Body() userData: {
-    name: string;
-    email: string;
-    roleId: number;
-  }): Promise<User> {
+  async update(
+    @Param('id') id: number,
+    @Body()
+    userData: {
+      name: string;
+      email: string;
+      roleId: number;
+    },
+  ): Promise<User> {
     return this.userService.update(id, userData);
   }
 
@@ -58,15 +78,18 @@ export class UserController {
   }
 
   @Put(':id/scores')
-  async updateScores(@Param('id') id: number, @Body() body: {
-    abilityScores: {
-      tech: number;
-      engineering: number;
-      uiux: number;
-      communication: number;
-      problem: number;
-    };
-  }): Promise<User> {
-    return this.userService.updateScores(id, body.abilityScores);
+  async updateScores(
+    @Request() req: { user: { userId: number } },
+    @Param('id') id: number,
+    @Body()
+    body: {
+      abilityScores: Record<string, number>;
+    },
+  ): Promise<User> {
+    return this.userService.updateScores(
+      req.user.userId,
+      id,
+      body.abilityScores,
+    );
   }
 }

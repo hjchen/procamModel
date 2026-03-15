@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Put, Delete, Param, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Put,
+  Delete,
+  Param,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { RankService } from './rank.service';
 import { Rank } from '../entities/rank.entity';
@@ -19,22 +28,29 @@ export class RankController {
   }
 
   @Post()
-  create(@Body() rankData: {
-    category: 'F' | 'E';
-    level: string;
-    name: string;
-    years: string;
-    description: string;
-  }) {
+  create(
+    @Body()
+    rankData: {
+      category: 'F' | 'E';
+      level: string;
+      name: string;
+      years: string;
+      description: string;
+    },
+  ) {
     return this.rankService.create(rankData);
   }
 
   @Put(':id')
-  update(@Param('id') id: number, @Body() rankData: {
-    name: string;
-    years: string;
-    description: string;
-  }) {
+  update(
+    @Param('id') id: number,
+    @Body()
+    rankData: {
+      name: string;
+      years: string;
+      description: string;
+    },
+  ) {
     return this.rankService.update(id, rankData);
   }
 

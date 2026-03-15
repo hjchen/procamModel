@@ -126,19 +126,20 @@ export default function DepartmentManagement() {
   };
 
   const handleManageMembers = async (department: Department) => {
-    setSelectedDepartment(department);
+    try {
+      setSelectedDepartment(department);
+      const currentDepartmentMembers: Array<{ id: number; [key: string]: unknown }> = await api.getDepartmentMembers(department.id);
+      setCurrentMembers(currentDepartmentMembers);
 
-    // 获取当前部门的成员
-    const currentDepartmentMembers = department.members || [];
-    setCurrentMembers(currentDepartmentMembers);
+      const currentMemberIds = currentDepartmentMembers.map(m => m.id);
+      const available = users.filter(user => !currentMemberIds.includes(user.id));
+      setAvailableUsers(available);
 
-    // 获取可添加的用户（未在当前部门的用户）
-    const currentMemberIds = currentDepartmentMembers.map(m => m.id);
-    const available = users.filter(user => !currentMemberIds.includes(user.id));
-    setAvailableUsers(available);
-
-    setSelectedUser(null);
-    setIsMemberModalOpen(true);
+      setSelectedUser(null);
+      setIsMemberModalOpen(true);
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '获取部门成员失败');
+    }
   };
 
   const handleMemberSubmit = async () => {

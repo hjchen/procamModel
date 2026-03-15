@@ -2,9 +2,7 @@ import { useState, useEffect } from 'react';
 import ReactECharts from 'echarts-for-react';
 import { Card, Row, Col, Statistic, Progress, Button, Slider, message, Spin } from 'antd';
 import { EditOutlined, SaveOutlined } from '@ant-design/icons';
-import { storage } from '../utils/storage';
 import { api } from '../services/api';
-import type { User } from '../types';
 
 interface AbilityDimension {
   code: string;
@@ -86,32 +84,103 @@ export default function PersonalRadar() {
     const standardScores = dimensions.map(dim => dim.standardScore);
 
     return {
+      tooltip: {
+        trigger: 'item',
+        triggerOn: 'mousemove|click',
+        confine: true,
+        formatter: (
+          params: {
+            name?: string;
+            value?: number[] | number;
+            dimensionIndex?: number;
+          },
+        ) => {
+          const dimensionIndex = params.dimensionIndex;
+          const values = Array.isArray(params.value) ? params.value : [];
+          if (typeof dimensionIndex === 'number' && dimensionIndex >= 0) {
+            const dimensionName = indicators[dimensionIndex]?.name || '维度';
+            const pointValue = values[dimensionIndex] ?? 0;
+            return `${dimensionName}<br/>${params.name || '评分'}: ${pointValue}`;
+          }
+          return '';
+        },
+      },
       title: {
         text: '个人能力雷达图',
-        left: 'center'
+        left: 'center',
+        top: 8
       },
       legend: {
         data: ['我的能力', '岗位标准'],
-        bottom: 10
+        bottom: 0
       },
       radar: {
         indicator: indicators,
-        radius: '65%'
+        center: ['50%', '54%'],
+        radius: '64%',
+        name: {
+          textStyle: {
+            fontSize: 12,
+            lineHeight: 16
+          }
+        }
       },
+      media: [
+        {
+          query: { maxWidth: 1400 },
+          option: {
+            radar: {
+              center: ['50%', '53%'],
+              radius: '60%',
+            },
+          },
+        },
+        {
+          query: { maxWidth: 992 },
+          option: {
+            radar: {
+              center: ['50%', '52%'],
+              radius: '58%',
+            },
+            legend: {
+              bottom: 4,
+            },
+          },
+        },
+      ],
       series: [{
         type: 'radar',
         data: [
           {
             value: myScores,
             name: '我的能力',
+            symbol: 'circle',
+            symbolSize: 10,
             areaStyle: { color: 'rgba(24, 144, 255, 0.3)' },
-            lineStyle: { color: '#1890FF', width: 2 }
+            lineStyle: { color: '#1890FF', width: 2 },
+            itemStyle: { color: '#1890FF' },
+            emphasis: {
+              lineStyle: { width: 3 },
+              itemStyle: {
+                borderColor: '#fff',
+                borderWidth: 2,
+              },
+            },
           },
           {
             value: standardScores,
             name: '岗位标准',
+            symbol: 'circle',
+            symbolSize: 10,
             lineStyle: { color: '#52C41A', type: 'dashed', width: 2 },
-            symbol: 'none'
+            itemStyle: { color: '#52C41A' },
+            emphasis: {
+              lineStyle: { width: 3, type: 'solid' },
+              itemStyle: {
+                borderColor: '#fff',
+                borderWidth: 2,
+              },
+            },
           }
         ]
       }]
@@ -164,53 +233,58 @@ export default function PersonalRadar() {
       </div>
 
       <Row gutter={[16, 16]}>
-        <Col span={16}>
+        <Col xs={24} xl={16}>
           <Card>
-            <ReactECharts option={getRadarOption()} className="h-[500px]" />
+            <ReactECharts
+              option={getRadarOption()}
+              style={{ height: 'clamp(560px, 72vh, 780px)' }}
+            />
           </Card>
         </Col>
 
-        <Col span={8}>
-          <Card title="能力概览" className="mb-4">
-            <Statistic title="综合得分" value={calculateOverallScore()} suffix="/ 100" />
-            <div className="mt-4">
-              <p><strong>姓名：</strong>{myData.name}</p>
-              <p><strong>岗位：</strong>{myData.positionName}</p>
-              <p><strong>职级：</strong>{myData.rank}</p>
-            </div>
-          </Card>
+        <Col xs={24} xl={8}>
+          <div style={{ maxHeight: 'calc(100vh - 240px)', overflowY: 'auto', paddingRight: 4 }}>
+            <Card title="能力概览" className="mb-4">
+              <Statistic title="综合得分" value={calculateOverallScore()} suffix="/ 100" />
+              <div className="mt-4">
+                <p><strong>姓名：</strong>{myData.name}</p>
+                <p><strong>岗位：</strong>{myData.positionName}</p>
+                <p><strong>职级：</strong>{myData.rank}</p>
+              </div>
+            </Card>
 
-          <Card title={isEditing ? "编辑能力评分" : "能力详情"}>
-            {myData.abilityDimensions.map(dimension => {
-              const score = isEditing && editScores ? editScores[dimension.code] : myData.scores[dimension.code] || 0;
-              return (
-                <div key={dimension.code} className="mb-4">
-                  <div className="flex justify-between mb-1">
-                    <span>{dimension.title}</span>
-                    <span>{score}</span>
+            <Card title={isEditing ? "编辑能力评分" : "能力详情"}>
+              {myData.abilityDimensions.map(dimension => {
+                const score = isEditing && editScores ? editScores[dimension.code] : myData.scores[dimension.code] || 0;
+                return (
+                  <div key={dimension.code} className="mb-4">
+                    <div className="flex justify-between mb-1">
+                      <span>{dimension.title}</span>
+                      <span>{score}</span>
+                    </div>
+                    <div className="text-xs text-gray-600 mb-1">
+                      {dimension.description}
+                    </div>
+                    {isEditing && editScores ? (
+                      <Slider
+                        min={0}
+                        max={100}
+                        value={score}
+                        onChange={(value) => {
+                          setEditScores({ ...editScores, [dimension.code]: value });
+                        }}
+                      />
+                    ) : (
+                      <Progress percent={score} showInfo={false} />
+                    )}
+                    <div className="text-xs text-gray-500 mt-1">
+                      岗位标准: {dimension.standardScore}
+                    </div>
                   </div>
-                  <div className="text-xs text-gray-600 mb-1">
-                    {dimension.description}
-                  </div>
-                  {isEditing && editScores ? (
-                    <Slider
-                      min={0}
-                      max={100}
-                      value={score}
-                      onChange={(value) => {
-                        setEditScores({ ...editScores, [dimension.code]: value });
-                      }}
-                    />
-                  ) : (
-                    <Progress percent={score} showInfo={false} />
-                  )}
-                  <div className="text-xs text-gray-500 mt-1">
-                    岗位标准: {dimension.standardScore}
-                  </div>
-                </div>
-              );
-            })}
-          </Card>
+                );
+              })}
+            </Card>
+          </div>
         </Col>
       </Row>
     </div>

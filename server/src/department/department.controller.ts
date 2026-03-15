@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { DepartmentService } from './department.service';
 
@@ -23,27 +32,38 @@ export class DepartmentController {
   }
 
   @Post()
-  async create(@Body() departmentData: {
-    name: string;
-    description?: string;
-    managerId?: number;
-  }) {
+  async create(
+    @Body()
+    departmentData: {
+      name: string;
+      description?: string;
+      managerId?: number;
+    },
+  ) {
     return this.departmentService.create(departmentData);
   }
 
   @Put(':id')
-  async update(@Param('id') id: number, @Body() departmentData: {
-    name?: string;
-    description?: string;
-    managerId?: number;
-  }) {
+  async update(
+    @Param('id') id: number,
+    @Body()
+    departmentData: {
+      name?: string;
+      description?: string;
+      managerId?: number;
+    },
+  ) {
     return this.departmentService.update(id, departmentData);
   }
 
   @Put(':id/members')
-  async updateMembers(@Param('id') id: number, @Body() data: {
-    memberIds: number[];
-  }) {
+  async updateMembers(
+    @Param('id') id: number,
+    @Body()
+    data: {
+      memberIds: number[];
+    },
+  ) {
     return this.departmentService.updateMembers(id, data.memberIds);
   }
 

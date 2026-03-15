@@ -8,7 +8,10 @@ export class AuthController {
 
   @Post('login')
   async login(@Body() body: { username: string; password: string }) {
-    const user = await this.authService.validateUser(body.username, body.password);
+    const user = await this.authService.validateUser(
+      body.username,
+      body.password,
+    );
     return this.authService.login(user);
   }
 
@@ -19,13 +22,16 @@ export class AuthController {
   }
 
   @Post('register')
-  async register(@Body() body: {
-    username: string;
-    password: string;
-    name: string;
-    email: string;
-    roleId: number;
-  }) {
+  async register(
+    @Body()
+    body: {
+      username: string;
+      password: string;
+      name: string;
+      email: string;
+      roleId: number;
+    },
+  ) {
     return this.authService.register(
       body.username,
       body.password,

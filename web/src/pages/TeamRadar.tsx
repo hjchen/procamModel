@@ -13,6 +13,11 @@ interface DepartmentMember {
   positionId?: number;
   rank?: string;
   abilityScores?: Record<string, number>;
+  selfAbilityScores?: Record<string, number>;
+  managerAbilityScores?: Record<string, number>;
+  groupPeerAverageScore?: number | null;
+  groupPeerAverageScores?: Record<string, number>;
+  groupPeerReviewCount?: number;
 }
 
 interface AbilityDimension {
@@ -27,15 +32,12 @@ export default function TeamRadar() {
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<number | null>(null);
   const [members, setMembers] = useState<DepartmentMember[]>([]);
   const [positions, setPositions] = useState<any[]>([]);
-  const [currentUser, setCurrentUser] = useState<any>(null);
   const [isScoreModalOpen, setIsScoreModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<DepartmentMember | null>(null);
   const [scores, setScores] = useState<Record<string, number>>({});
   const [abilityDimensions, setAbilityDimensions] = useState<AbilityDimension[]>([]);
 
   useEffect(() => {
-    const user = storage.get('CURRENT_USER');
-    setCurrentUser(user);
     loadDepartments();
     loadPositions();
   }, []);
@@ -52,7 +54,7 @@ export default function TeamRadar() {
       setDepartments(data);
 
       // 如果是部门管理员，自动选择其管理的部门
-      const user = storage.get('CURRENT_USER');
+      const user = storage.get<{ id: number }>('CURRENT_USER');
       if (user) {
         const managedDept = data.find((d: any) => d.managerId === user.id);
         if (managedDept) {
@@ -63,15 +65,6 @@ export default function TeamRadar() {
       }
     } catch (error) {
       message.error('获取部门列表失败');
-    }
-  };
-
-  const loadMyAbilityDimensions = async () => {
-    try {
-      const data = await api.getMyAbilityScores();
-      setAbilityDimensions(data.abilityDimensions || []);
-    } catch (error) {
-      console.error('获取能力维度失败:', error);
     }
   };
 
@@ -111,7 +104,7 @@ export default function TeamRadar() {
 
           const initialScores: Record<string, number> = {};
           dimensions.forEach((dim: AbilityDimension) => {
-            initialScores[dim.code] = member.abilityScores?.[dim.code] || 0;
+            initialScores[dim.code] = member.managerAbilityScores?.[dim.code] || 0;
           });
           setScores(initialScores);
         }
@@ -131,15 +124,7 @@ export default function TeamRadar() {
     if (!editingMember) return;
 
     try {
-      // 这里需要添加一个API来更新用户的能力评分
-      await fetch(`http://localhost:3000/users/${editingMember.id}/scores`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify({ abilityScores: scores }),
-      });
+      await api.updateUserAbilityScores(editingMember.id, scores);
 
       message.success('评分保存成功');
       setIsScoreModalOpen(false);
@@ -149,19 +134,6 @@ export default function TeamRadar() {
     } catch (error) {
       message.error('保存评分失败');
     }
-  };
-
-  const canManageDepartment = () => {
-    if (!currentUser || !selectedDepartmentId) return false;
-
-    // admin和hr可以管理所有部门
-    if (currentUser.role === 'admin' || currentUser.role === 'hr') {
-      return true;
-    }
-
-    // 部门管理员只能管理自己的部门
-    const dept = departments.find(d => d.id === selectedDepartmentId);
-    return dept && dept.managerId === currentUser.id;
   };
 
   const getScoreColor = (score: number) => {
@@ -177,6 +149,14 @@ export default function TeamRadar() {
     const position = positions.find(p => p.id === member.positionId);
     return position?.abilityDimensions || [];
   };
+
+  const getSelfScore = (member: DepartmentMember, dimensionCode: string) =>
+    member.selfAbilityScores?.[dimensionCode] ??
+    member.abilityScores?.[dimensionCode] ??
+    0;
+
+  const getManagerScore = (member: DepartmentMember, dimensionCode: string) =>
+    member.managerAbilityScores?.[dimensionCode];
 
   const columns: ColumnsType<DepartmentMember> = [
     {
@@ -210,8 +190,8 @@ export default function TeamRadar() {
       render: (rank) => rank || '-',
     },
     {
-      title: '能力评分',
-      key: 'abilities',
+      title: '自评维度分',
+      key: 'selfAbilities',
       width: 400,
       render: (_: any, record: DepartmentMember) => {
         const dimensions = getMemberAbilityDimensions(record);
@@ -221,11 +201,57 @@ export default function TeamRadar() {
         return (
           <Space size="small" wrap>
             {dimensions.map((dim: any) => (
-              <Tag key={dim.code} color={getScoreColor(record.abilityScores?.[dim.code] || 0)}>
-                {dim.title}: {record.abilityScores?.[dim.code] || 0}
+              <Tag key={dim.code} color={getScoreColor(getSelfScore(record, dim.code))}>
+                {dim.title}: {getSelfScore(record, dim.code)}
               </Tag>
             ))}
           </Space>
+        );
+      },
+    },
+    {
+      title: '管理者评分',
+      key: 'managerAbilities',
+      width: 420,
+      render: (_: any, record: DepartmentMember) => {
+        const dimensions = getMemberAbilityDimensions(record);
+        if (dimensions.length === 0) {
+          return <span style={{ color: '#999' }}>未分配岗位</span>;
+        }
+        return (
+          <Space size="small" wrap>
+            {dimensions.map((dim: any) => (
+              <Tag
+                key={dim.code}
+                color={
+                  getManagerScore(record, dim.code) !== undefined
+                    ? getScoreColor(getManagerScore(record, dim.code) as number)
+                    : 'default'
+                }
+              >
+                {dim.title}: {getManagerScore(record, dim.code) ?? '-'}
+                {record.groupPeerAverageScores?.[dim.code] !== undefined
+                  ? ` / 同组${record.groupPeerAverageScores[dim.code]}`
+                  : ''}
+              </Tag>
+            ))}
+          </Space>
+        );
+      },
+    },
+    {
+      title: '同组平均分',
+      key: 'groupPeerAverageScore',
+      width: 140,
+      render: (_: any, record: DepartmentMember) => {
+        if (record.groupPeerAverageScore === null || record.groupPeerAverageScore === undefined) {
+          return <span style={{ color: '#999' }}>-</span>;
+        }
+        return (
+          <Tag color={getScoreColor(record.groupPeerAverageScore)}>
+            {record.groupPeerAverageScore}
+            {record.groupPeerReviewCount ? ` (${record.groupPeerReviewCount}份)` : ''}
+          </Tag>
         );
       },
     },
@@ -235,15 +261,13 @@ export default function TeamRadar() {
       fixed: 'right',
       width: 100,
       render: (_: any, record: DepartmentMember) => (
-        canManageDepartment() ? (
-          <Button
-            type="link"
-            icon={<EditOutlined />}
-            onClick={() => handleScore(record)}
-          >
-            评分
-          </Button>
-        ) : null
+        <Button
+          type="link"
+          icon={<EditOutlined />}
+          onClick={() => handleScore(record)}
+        >
+          评分
+        </Button>
       ),
     },
   ];
@@ -269,7 +293,7 @@ export default function TeamRadar() {
         dataSource={members}
         rowKey="id"
         pagination={{ pageSize: 10 }}
-        scroll={{ x: 1000 }}
+        scroll={{ x: 1600 }}
       />
 
       <Modal

@@ -33,11 +33,14 @@ export class RankService {
     return this.ranksRepository.save(rank);
   }
 
-  async update(id: number, rankData: {
-    name: string;
-    years: string;
-    description: string;
-  }): Promise<Rank> {
+  async update(
+    id: number,
+    rankData: {
+      name: string;
+      years: string;
+      description: string;
+    },
+  ): Promise<Rank> {
     const rank = await this.findOne(id);
     rank.name = rankData.name;
     rank.years = rankData.years;

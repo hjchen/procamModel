@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Table, Button, Modal, Form, Input, Space, Card, message, Tag, Checkbox, Divider, Select } from 'antd';
+import { Table, Button, Modal, Form, Input, Space, Card, message, Tag, Checkbox, Select } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, UserAddOutlined, TeamOutlined, LockOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import type { Role, User, Permission, Position, Rank } from '../types';
@@ -497,44 +497,20 @@ export default function RoleManagement() {
       >
         <Space direction="vertical" size="large" style={{ width: '100%' }}>
           <div>
-            <h4 style={{ marginBottom: 16 }}>页面访问权限</h4>
+            <h4 style={{ marginBottom: 16 }}>页面访问权限（仅7个页面）</h4>
             <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-              {permissions
-                .filter(p => p.type === 'page')
-                .map(permission => (
-                  <Checkbox
-                    key={permission.id}
-                    checked={selectedPermissions.includes(permission.id as number)}
-                    onChange={() => handlePermissionChange(permission.id as number)}
-                  >
-                    <div>
-                      <div style={{ fontWeight: 500 }}>{permission.name}</div>
-                      <div style={{ fontSize: 12, color: '#999' }}>{permission.description}</div>
-                    </div>
-                  </Checkbox>
-                ))}
-            </Space>
-          </div>
-
-          <Divider style={{ margin: '12px 0' }} />
-
-          <div>
-            <h4 style={{ marginBottom: 16 }}>操作权限</h4>
-            <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-              {permissions
-                .filter(p => p.type === 'action')
-                .map(permission => (
-                  <Checkbox
-                    key={permission.id}
-                    checked={selectedPermissions.includes(permission.id as number)}
-                    onChange={() => handlePermissionChange(permission.id as number)}
-                  >
-                    <div>
-                      <div style={{ fontWeight: 500 }}>{permission.name}</div>
-                      <div style={{ fontSize: 12, color: '#999' }}>{permission.description}</div>
-                    </div>
-                  </Checkbox>
-                ))}
+              {permissions.map(permission => (
+                <Checkbox
+                  key={permission.id}
+                  checked={selectedPermissions.includes(permission.id as number)}
+                  onChange={() => handlePermissionChange(permission.id as number)}
+                >
+                  <div>
+                    <div style={{ fontWeight: 500 }}>{permission.description}</div>
+                    <div style={{ fontSize: 12, color: '#999' }}>{permission.path}</div>
+                  </div>
+                </Checkbox>
+              ))}
             </Space>
           </div>
         </Space>

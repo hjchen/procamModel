@@ -1,7 +1,13 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../entities/user.entity';
+import { Department } from '../entities/department.entity';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -9,6 +15,8 @@ export class UserService {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+    @InjectRepository(Department)
+    private departmentsRepository: Repository<Department>,
   ) {}
 
   async findAll(): Promise<User[]> {
@@ -18,7 +26,7 @@ export class UserService {
   async findOne(id: number): Promise<User> {
     const user = await this.usersRepository.findOne({
       where: { id },
-      relations: ['role']
+      relations: ['role'],
     });
     if (!user) {
       throw new NotFoundException('用户不存在');
@@ -33,7 +41,9 @@ export class UserService {
     email: string;
     roleId: number;
   }): Promise<User> {
-    const existingUser = await this.usersRepository.findOne({ where: { username: userData.username } });
+    const existingUser = await this.usersRepository.findOne({
+      where: { username: userData.username },
+    });
     if (existingUser) {
       throw new ConflictException('用户名已存在');
     }
@@ -50,11 +60,14 @@ export class UserService {
     return this.usersRepository.save(user);
   }
 
-  async update(id: number, userData: {
-    name: string;
-    email: string;
-    roleId: number;
-  }): Promise<User> {
+  async update(
+    id: number,
+    userData: {
+      name: string;
+      email: string;
+      roleId: number;
+    },
+  ): Promise<User> {
     const user = await this.findOne(id);
     user.name = userData.name;
     user.email = userData.email;
@@ -67,17 +80,22 @@ export class UserService {
     await this.usersRepository.remove(user);
   }
 
-  async batchCreate(usersData: Array<{
-    username: string;
-    name: string;
-    email: string;
-    positionId: number;
-    rank: string;
-  }>, roleId: number): Promise<User[]> {
+  async batchCreate(
+    usersData: Array<{
+      username: string;
+      name: string;
+      email: string;
+      positionId: number;
+      rank: string;
+    }>,
+    roleId: number,
+  ): Promise<User[]> {
     const createdUsers: User[] = [];
 
     for (const userData of usersData) {
-      const existingUser = await this.usersRepository.findOne({ where: { username: userData.username } });
+      const existingUser = await this.usersRepository.findOne({
+        where: { username: userData.username },
+      });
       if (!existingUser) {
         const hashedPassword = await bcrypt.hash(userData.username, 10);
         const user = this.usersRepository.create({
@@ -98,15 +116,51 @@ export class UserService {
     return createdUsers;
   }
 
-  async updateScores(id: number, abilityScores: {
-    tech: number;
-    engineering: number;
-    uiux: number;
-    communication: number;
-    problem: number;
-  }): Promise<User> {
+  async updateScores(
+    operatorUserId: number,
+    id: number,
+    abilityScores: Record<string, number>,
+  ): Promise<User> {
+    const operatorUser = await this.findOne(operatorUserId);
     const user = await this.findOne(id);
-    user.abilityScores = abilityScores;
+
+    if (!user.departmentId) {
+      throw new ForbiddenException('成员未归属部门，无法进行管理者评分');
+    }
+
+    // 检查操作者是否有评分权限
+    let hasPermission = false;
+
+    // 1. 系统管理员、HR有全局评分权限
+    if (
+      operatorUser.role?.name === 'admin' ||
+      operatorUser.role?.name === 'hr'
+    ) {
+      hasPermission = true;
+    }
+
+    // 2. 检查是否为该成员所属部门的管理者
+    if (!hasPermission) {
+      const department = await this.departmentsRepository.findOne({
+        where: { id: user.departmentId },
+      });
+
+      if (department && department.managerId === operatorUserId) {
+        hasPermission = true;
+      }
+    }
+
+    // 3. manager角色也有评分权限（向下兼容）
+    if (!hasPermission && operatorUser.role?.name === 'manager') {
+      hasPermission = true;
+    }
+
+    if (!hasPermission) {
+      throw new ForbiddenException('您没有权限对该成员进行评分');
+    }
+
+    user.managerAbilityScores = abilityScores;
+    user.abilityScores = abilityScores as any;
     return this.usersRepository.save(user);
   }
 }

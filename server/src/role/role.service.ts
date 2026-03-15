@@ -1,11 +1,21 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Role } from '../entities/role.entity';
 import { Permission } from '../entities/permission.entity';
 
 @Injectable()
 export class RoleService {
+  private readonly pagePaths = [
+    '/positions',
+    '/ranks',
+    '/departments',
+    '/roles',
+    '/personal',
+    '/group-peer-review',
+    '/team',
+  ];
+
   constructor(
     @InjectRepository(Role)
     private rolesRepository: Repository<Role>,
@@ -18,9 +28,9 @@ export class RoleService {
   }
 
   async findOne(id: number): Promise<Role> {
-    const role = await this.rolesRepository.findOne({ 
+    const role = await this.rolesRepository.findOne({
       where: { id },
-      relations: ['permissions'] 
+      relations: ['permissions'],
     });
     if (!role) {
       throw new NotFoundException('角色不存在');
@@ -33,7 +43,13 @@ export class RoleService {
     description: string;
     permissionIds: number[];
   }): Promise<Role> {
-    const permissions = await this.permissionsRepository.findByIds(roleData.permissionIds);
+    const permissions = await this.permissionsRepository.find({
+      where: {
+        id: In(roleData.permissionIds || []),
+        type: 'page',
+        path: In(this.pagePaths),
+      },
+    });
     const role = this.rolesRepository.create({
       name: roleData.name,
       description: roleData.description,
@@ -42,11 +58,14 @@ export class RoleService {
     return this.rolesRepository.save(role);
   }
 
-  async update(id: number, roleData: {
-    name?: string;
-    description?: string;
-    permissionIds?: number[];
-  }): Promise<Role> {
+  async update(
+    id: number,
+    roleData: {
+      name?: string;
+      description?: string;
+      permissionIds?: number[];
+    },
+  ): Promise<Role> {
     const role = await this.findOne(id);
 
     if (roleData.name !== undefined) {
@@ -56,7 +75,13 @@ export class RoleService {
       role.description = roleData.description;
     }
     if (roleData.permissionIds !== undefined) {
-      const permissions = await this.permissionsRepository.findByIds(roleData.permissionIds);
+      const permissions = await this.permissionsRepository.find({
+        where: {
+          id: In(roleData.permissionIds || []),
+          type: 'page',
+          path: In(this.pagePaths),
+        },
+      });
       role.permissions = permissions;
     }
 
@@ -69,6 +94,14 @@ export class RoleService {
   }
 
   async getPermissions(): Promise<Permission[]> {
-    return this.permissionsRepository.find();
+    return this.permissionsRepository.find({
+      where: {
+        type: 'page',
+        path: In(this.pagePaths),
+      },
+      order: {
+        id: 'ASC',
+      },
+    });
   }
 }
