@@ -334,6 +334,21 @@ export const api = {
     return response.json();
   },
 
+  async getDepartment(id: number) {
+    const response = await fetch(`${API_BASE_URL}/departments/${id}`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || '获取部门详情失败');
+    }
+
+    return response.json();
+  },
+
   async deleteUser(id: number) {
     const response = await fetch(`${API_BASE_URL}/users/${id}`, {
       method: 'DELETE',
@@ -430,6 +445,145 @@ export const api = {
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.message || '删除部门失败');
+    }
+
+    return response.json();
+  },
+
+  async getSections(departmentId: number) {
+    const response = await fetch(
+      `${API_BASE_URL}/sections?departmentId=${departmentId}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      },
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || '获取科室列表失败');
+    }
+
+    return response.json();
+  },
+
+  async getSection(id: number) {
+    const response = await fetch(`${API_BASE_URL}/sections/${id}`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || '获取科室详情失败');
+    }
+
+    return response.json();
+  },
+
+  async createSection(sectionData: any) {
+    const response = await fetch(`${API_BASE_URL}/sections`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+      body: JSON.stringify(sectionData),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || '创建科室失败');
+    }
+
+    return response.json();
+  },
+
+  async updateSection(id: number, sectionData: any) {
+    const response = await fetch(`${API_BASE_URL}/sections/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+      body: JSON.stringify(sectionData),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || '更新科室失败');
+    }
+
+    return response.json();
+  },
+
+  async updateSectionMembers(id: number, memberIds: number[]) {
+    const response = await fetch(`${API_BASE_URL}/sections/${id}/members`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+      body: JSON.stringify({ memberIds }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || '更新科室成员失败');
+    }
+
+    return response.json();
+  },
+
+  async addSectionMembers(id: number, memberIds: number[]) {
+    const response = await fetch(`${API_BASE_URL}/sections/${id}/members`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+      body: JSON.stringify({ memberIds }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || '添加科室成员失败');
+    }
+
+    return response.json();
+  },
+
+  async removeSectionMembers(id: number, memberIds: number[]) {
+    const response = await fetch(`${API_BASE_URL}/sections/${id}/members`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+      body: JSON.stringify({ memberIds }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || '移除科室成员失败');
+    }
+
+    return response.json();
+  },
+
+  async deleteSection(id: number) {
+    const response = await fetch(`${API_BASE_URL}/sections/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || '删除科室失败');
     }
 
     return response.json();

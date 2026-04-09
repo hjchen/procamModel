@@ -11,6 +11,7 @@ import { RankModule } from './rank/rank.module';
 import { AbilityDimensionModule } from './ability-dimension/ability-dimension.module';
 import { DepartmentModule } from './department/department.module';
 import { GroupModule } from './group/group.module';
+import { SectionModule } from './section/section.module';
 import { User } from './entities/user.entity';
 import { Role } from './entities/role.entity';
 import { Permission } from './entities/permission.entity';
@@ -21,6 +22,7 @@ import { Employee } from './entities/employee.entity';
 import { Department } from './entities/department.entity';
 import { Group } from './entities/group.entity';
 import { GroupPeerReview } from './entities/group-peer-review.entity';
+import { Section } from './entities/section.entity';
 import { AbilityModule } from './ability/ability.module';
 
 @Module({
@@ -43,6 +45,7 @@ import { AbilityModule } from './ability/ability.module';
         Employee,
         Department,
         Group,
+        Section,
         GroupPeerReview,
       ],
       synchronize: true,
@@ -63,6 +66,7 @@ import { AbilityModule } from './ability/ability.module';
     AbilityDimensionModule,
     DepartmentModule,
     GroupModule,
+    SectionModule,
     AbilityModule,
   ],
   controllers: [AppController],

@@ -268,6 +268,10 @@ export default function DepartmentManagement() {
     navigate(`/group/${group.id}`);
   };
 
+  const handleManageSections = (department: Department) => {
+    navigate(`/departments/${department.id}/sections`);
+  };
+
   const getManagerName = (managerId?: number) => {
     const manager = users.find(u => u.id === managerId);
     return manager ? manager.name : '-';
@@ -323,6 +327,13 @@ export default function DepartmentManagement() {
             onClick={() => handleViewAbilities(record)}
           >
             能力列表
+          </Button>
+          <Button
+            type="link"
+            icon={<TeamOutlined />}
+            onClick={() => handleManageSections(record)}
+          >
+            科室管理
           </Button>
           <Button
             type="link"
