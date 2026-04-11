@@ -7,6 +7,7 @@ import { User } from '../entities/user.entity';
 import { Department } from '../entities/department.entity';
 import { Position } from '../entities/position.entity';
 import { GroupPeerReview } from '../entities/group-peer-review.entity';
+import { Section } from '../entities/section.entity';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { GroupPeerReview } from '../entities/group-peer-review.entity';
       Group,
       User,
       Department,
+      Section,
       Position,
       GroupPeerReview,
     ]),

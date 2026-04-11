@@ -589,6 +589,21 @@ export const api = {
     return response.json();
   },
 
+  async getGroupsBySection(sectionId: number) {
+    const response = await fetch(`${API_BASE_URL}/groups?sectionId=${sectionId}`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || '获取分组列表失败');
+    }
+
+    return response.json();
+  },
+
   async getGroups(departmentId: number) {
     const response = await fetch(`${API_BASE_URL}/groups?departmentId=${departmentId}`, {
       headers: {

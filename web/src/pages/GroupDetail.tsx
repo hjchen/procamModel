@@ -1,6 +1,22 @@
 import { useState, useEffect } from 'react';
-import { Table, Button, Modal, Form, Select, Space, Card, message, Tag, Typography, Breadcrumb } from 'antd';
-import { PlusOutlined, DeleteOutlined, ArrowLeftOutlined, UserAddOutlined, UserDeleteOutlined } from '@ant-design/icons';
+import {
+  Table,
+  Button,
+  Modal,
+  Form,
+  Select,
+  Space,
+  Card,
+  message,
+  Tag,
+  Typography,
+  Breadcrumb,
+} from 'antd';
+import {
+  UserAddOutlined,
+  UserDeleteOutlined,
+  ArrowLeftOutlined,
+} from '@ant-design/icons';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 
@@ -11,7 +27,12 @@ interface Group {
   name: string;
   description?: string;
   departmentId: number;
+  sectionId: number | null;
   department?: {
+    id: number;
+    name: string;
+  };
+  section?: {
     id: number;
     name: string;
   };
@@ -21,7 +42,7 @@ interface Group {
 export default function GroupDetail() {
   const [group, setGroup] = useState<Group | null>(null);
   const [users, setUsers] = useState<any[]>([]);
-  const [departmentUsers, setDepartmentUsers] = useState<any[]>([]);
+  const [candidateUsers, setCandidateUsers] = useState<any[]>([]);
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
   const [selectedMemberIds, setSelectedMemberIds] = useState<number[]>([]);
   const [form] = Form.useForm();
@@ -30,19 +51,63 @@ export default function GroupDetail() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (id) {
-      loadGroup();
-      loadUsers();
+    if (!id) {
+      return;
     }
+    loadGroup();
+    loadUsers();
   }, [id]);
+
+  useEffect(() => {
+    if (!group) {
+      setCandidateUsers([]);
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadCandidateUsers = async () => {
+      try {
+        if (group.sectionId) {
+          const sectionDetail = await api.getSection(group.sectionId);
+          if (!cancelled) {
+            setCandidateUsers(sectionDetail.members || []);
+          }
+          return;
+        }
+
+        if (!cancelled) {
+          const departmentUsers = users.filter(
+            (user) => user.departmentId === group.departmentId,
+          );
+          setCandidateUsers(departmentUsers);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setCandidateUsers([]);
+          message.error(
+            error instanceof Error ? error.message : '获取可选成员失败',
+          );
+        }
+      }
+    };
+
+    loadCandidateUsers();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [group, users]);
 
   const loadGroup = async () => {
     try {
-      if (!id) return;
-      const groupData = await api.getGroup(parseInt(id));
+      if (!id) {
+        return;
+      }
+      const groupData = await api.getGroup(parseInt(id, 10));
       setGroup(groupData);
     } catch (error) {
-      message.error('获取分组信息失败');
+      message.error(error instanceof Error ? error.message : '获取分组信息失败');
     }
   };
 
@@ -51,25 +116,22 @@ export default function GroupDetail() {
       const userData = await api.getUsers();
       setUsers(userData);
     } catch (error) {
-      message.error('获取用户列表失败');
+      message.error(error instanceof Error ? error.message : '获取用户列表失败');
     }
   };
 
-  useEffect(() => {
-    if (group && users.length > 0) {
-      const deptUsers = users.filter(user => user.departmentId === group.departmentId);
-      setDepartmentUsers(deptUsers);
-    }
-  }, [group, users]);
-
   const handleAddMembers = () => {
-    if (!group) return;
+    if (!group) {
+      return;
+    }
 
-    const currentMemberIds = group.members.map(m => m.id);
-    const availableUsers = departmentUsers.filter(user => !currentMemberIds.includes(user.id));
+    const currentMemberIds = group.members.map((member) => member.id);
+    const availableUsers = candidateUsers.filter(
+      (user) => !currentMemberIds.includes(user.id),
+    );
 
     if (availableUsers.length === 0) {
-      message.info('该部门所有成员都已在此分组中');
+      message.info('当前范围内暂无可添加成员');
       return;
     }
 
@@ -80,7 +142,9 @@ export default function GroupDetail() {
   const handleAddMemberSubmit = async () => {
     try {
       const values = await form.validateFields();
-      if (!group || !values.memberIds || values.memberIds.length === 0) return;
+      if (!group || !values.memberIds || values.memberIds.length === 0) {
+        return;
+      }
 
       await api.addGroupMembers(group.id, values.memberIds);
       message.success('添加成员成功');
@@ -98,13 +162,15 @@ export default function GroupDetail() {
     }
 
     Modal.confirm({
-      title: '确定要移除选中的成员吗?',
+      title: '确定移除选中的成员吗？',
       content: `将移除 ${selectedMemberIds.length} 个成员`,
       okText: '确定',
       cancelText: '取消',
       onOk: async () => {
         try {
-          if (!group) return;
+          if (!group) {
+            return;
+          }
           await api.removeGroupMembers(group.id, selectedMemberIds);
           message.success('移除成员成功');
           setSelectedMemberIds([]);
@@ -112,18 +178,20 @@ export default function GroupDetail() {
         } catch (error) {
           message.error(error instanceof Error ? error.message : '移除成员失败');
         }
-      }
+      },
     });
   };
 
   const handleBack = () => {
-    navigate('/departments');
+    navigate(-1);
   };
 
   const getAvailableUsers = () => {
-    if (!group) return [];
-    const currentMemberIds = group.members.map(m => m.id);
-    return departmentUsers.filter(user => !currentMemberIds.includes(user.id));
+    if (!group) {
+      return [];
+    }
+    const currentMemberIds = group.members.map((member) => member.id);
+    return candidateUsers.filter((user) => !currentMemberIds.includes(user.id));
   };
 
   const memberColumns = [
@@ -166,15 +234,17 @@ export default function GroupDetail() {
         </Button>
         <Breadcrumb style={{ marginBottom: 16 }}>
           <Breadcrumb.Item>部门管理</Breadcrumb.Item>
-          <Breadcrumb.Item>{group.department?.name}</Breadcrumb.Item>
-          <Breadcrumb.Item>分组管理</Breadcrumb.Item>
+          <Breadcrumb.Item>{group.department?.name || '-'}</Breadcrumb.Item>
+          <Breadcrumb.Item>{group.section?.name || '分组管理'}</Breadcrumb.Item>
           <Breadcrumb.Item>{group.name}</Breadcrumb.Item>
         </Breadcrumb>
       </div>
 
       <div style={{ marginBottom: 24 }}>
         <Title level={3}>{group.name}</Title>
-        {group.description && <p style={{ color: '#666', margin: '8px 0' }}>{group.description}</p>}
+        {group.description && (
+          <p style={{ color: '#666', margin: '8px 0' }}>{group.description}</p>
+        )}
         <Tag color="blue">成员数量: {group.members?.length || 0}</Tag>
       </div>
 
@@ -207,7 +277,8 @@ export default function GroupDetail() {
           pagination={{ pageSize: 10 }}
           rowSelection={{
             selectedRowKeys: selectedMemberIds,
-            onChange: (selectedRowKeys) => setSelectedMemberIds(selectedRowKeys as number[]),
+            onChange: (selectedRowKeys) =>
+              setSelectedMemberIds(selectedRowKeys as number[]),
           }}
         />
       </Card>
@@ -221,10 +292,7 @@ export default function GroupDetail() {
         cancelText="取消"
         width={600}
       >
-        <Form
-          form={form}
-          layout="vertical"
-        >
+        <Form form={form} layout="vertical">
           <Form.Item
             label="选择成员"
             name="memberIds"
@@ -237,9 +305,9 @@ export default function GroupDetail() {
               filterOption={(input, option) =>
                 (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
               }
-              options={getAvailableUsers().map(user => ({
+              options={getAvailableUsers().map((user) => ({
                 label: `${user.name} (${user.username})`,
-                value: user.id
+                value: user.id,
               }))}
             />
           </Form.Item>

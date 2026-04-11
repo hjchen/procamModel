@@ -21,6 +21,7 @@ import {
   DeleteOutlined,
   EditOutlined,
   PlusOutlined,
+  TeamOutlined,
   UserAddOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
@@ -50,7 +51,21 @@ interface Section {
   members?: UserInfo[];
 }
 
+interface Group {
+  id: number;
+  name: string;
+  description?: string;
+  departmentId: number;
+  sectionId: number | null;
+  members?: UserInfo[];
+}
+
 interface SectionFormValues {
+  name: string;
+  description?: string;
+}
+
+interface GroupFormValues {
   name: string;
   description?: string;
 }
@@ -59,6 +74,7 @@ export default function SectionManagement() {
   const { departmentId } = useParams<{ departmentId: string }>();
   const navigate = useNavigate();
   const [form] = Form.useForm<SectionFormValues>();
+  const [groupForm] = Form.useForm<GroupFormValues>();
 
   const parsedDepartmentId = Number(departmentId);
   const isDepartmentIdValid =
@@ -77,9 +93,21 @@ export default function SectionManagement() {
   const [currentMembers, setCurrentMembers] = useState<UserInfo[]>([]);
   const [selectedUser, setSelectedUser] = useState<number | null>(null);
 
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
+  const [isGroupFormModalOpen, setIsGroupFormModalOpen] = useState(false);
+  const [selectedSectionForGroup, setSelectedSectionForGroup] =
+    useState<Section | null>(null);
+  const [editingGroup, setEditingGroup] = useState<Group | null>(null);
+
   const loadSections = async (targetDepartmentId: number) => {
     const sectionData = await api.getSections(targetDepartmentId);
     setSections(sectionData);
+  };
+
+  const loadGroups = async (sectionId: number) => {
+    const groupData = await api.getGroupsBySection(sectionId);
+    setGroups(groupData);
   };
 
   const loadData = async () => {
@@ -186,6 +214,83 @@ export default function SectionManagement() {
     }
   };
 
+  const handleManageGroups = async (section: Section) => {
+    try {
+      setSelectedSectionForGroup(section);
+      await loadGroups(section.id);
+      setIsGroupModalOpen(true);
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '加载分组失败');
+    }
+  };
+
+  const handleOpenCreateGroupModal = () => {
+    setEditingGroup(null);
+    groupForm.resetFields();
+    setIsGroupFormModalOpen(true);
+  };
+
+  const handleOpenEditGroupModal = (group: Group) => {
+    setEditingGroup(group);
+    groupForm.setFieldsValue({
+      name: group.name,
+      description: group.description,
+    });
+    setIsGroupFormModalOpen(true);
+  };
+
+  const handleSaveGroup = async () => {
+    if (!selectedSectionForGroup) {
+      return;
+    }
+
+    try {
+      const values = await groupForm.validateFields();
+
+      if (editingGroup) {
+        await api.updateGroup(editingGroup.id, values);
+        message.success('分组更新成功');
+      } else {
+        await api.createGroup({
+          ...values,
+          sectionId: selectedSectionForGroup.id,
+        });
+        message.success('分组创建成功');
+      }
+
+      setIsGroupFormModalOpen(false);
+      await loadGroups(selectedSectionForGroup.id);
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '保存分组失败');
+    }
+  };
+
+  const handleDeleteGroup = (group: Group) => {
+    Modal.confirm({
+      title: '确定删除该分组吗？',
+      content: `分组：${group.name}`,
+      okText: '确定',
+      cancelText: '取消',
+      onOk: async () => {
+        if (!selectedSectionForGroup) {
+          return;
+        }
+
+        try {
+          await api.deleteGroup(group.id);
+          message.success('删除分组成功');
+          await loadGroups(selectedSectionForGroup.id);
+        } catch (error) {
+          message.error(error instanceof Error ? error.message : '删除分组失败');
+        }
+      },
+    });
+  };
+
+  const handleViewGroupDetail = (group: Group) => {
+    navigate(`/group/${group.id}`);
+  };
+
   const availableUsers = useMemo(() => {
     if (!isDepartmentIdValid) {
       return [];
@@ -269,6 +374,13 @@ export default function SectionManagement() {
             onClick={() => handleManageMembers(record)}
           >
             成员管理
+          </Button>
+          <Button
+            type="link"
+            icon={<TeamOutlined />}
+            onClick={() => handleManageGroups(record)}
+          >
+            分组管理
           </Button>
           <Button
             type="link"
@@ -415,6 +527,90 @@ export default function SectionManagement() {
             </List.Item>
           )}
         />
+      </Modal>
+
+      <Modal
+        title={`${selectedSectionForGroup?.name || ''} - 分组管理`}
+        open={isGroupModalOpen}
+        onCancel={() => setIsGroupModalOpen(false)}
+        width={800}
+        footer={[
+          <Button key="add" type="primary" onClick={handleOpenCreateGroupModal}>
+            新增分组
+          </Button>,
+          <Button key="close" onClick={() => setIsGroupModalOpen(false)}>
+            关闭
+          </Button>,
+        ]}
+      >
+        <Table<Group> rowKey="id" dataSource={groups} pagination={false}>
+          <Table.Column title="分组名称" dataIndex="name" key="name" />
+          <Table.Column
+            title="分组描述"
+            dataIndex="description"
+            key="description"
+            render={(value: string | undefined) => value || '-'}
+          />
+          <Table.Column
+            title="成员数量"
+            key="memberCount"
+            render={(_, record: Group) => (
+              <Tag color="blue">{record.members?.length || 0}</Tag>
+            )}
+          />
+          <Table.Column
+            title="操作"
+            key="action"
+            render={(_, record: Group) => (
+              <Space size="small">
+                <Button
+                  type="link"
+                  icon={<EditOutlined />}
+                  onClick={() => handleOpenEditGroupModal(record)}
+                >
+                  编辑
+                </Button>
+                <Button
+                  type="link"
+                  icon={<TeamOutlined />}
+                  onClick={() => handleViewGroupDetail(record)}
+                >
+                  成员管理
+                </Button>
+                <Button
+                  type="link"
+                  danger
+                  icon={<DeleteOutlined />}
+                  onClick={() => handleDeleteGroup(record)}
+                >
+                  删除
+                </Button>
+              </Space>
+            )}
+          />
+        </Table>
+      </Modal>
+
+      <Modal
+        title={editingGroup ? '编辑分组' : '新增分组'}
+        open={isGroupFormModalOpen}
+        onOk={handleSaveGroup}
+        onCancel={() => setIsGroupFormModalOpen(false)}
+        okText="保存"
+        cancelText="取消"
+      >
+        <Form form={groupForm} layout="vertical">
+          <Form.Item
+            label="分组名称"
+            name="name"
+            rules={[{ required: true, message: '请输入分组名称' }]}
+          >
+            <Input placeholder="请输入分组名称" />
+          </Form.Item>
+          <Form.Item label="分组描述" name="description">
+            <Input.TextArea rows={3} placeholder="请输入分组描述" />
+          </Form.Item>
+        </Form>
       </Modal>
     </Card>
   );

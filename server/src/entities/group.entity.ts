@@ -5,8 +5,10 @@ import {
   ManyToOne,
   ManyToMany,
   JoinTable,
+  JoinColumn,
 } from 'typeorm';
 import { Department } from './department.entity';
+import { Section } from './section.entity';
 import { User } from './user.entity';
 
 @Entity('groups')
@@ -25,6 +27,13 @@ export class Group {
 
   @ManyToOne(() => Department)
   department: Department;
+
+  @Column({ name: 'section_id', type: 'int', nullable: true })
+  sectionId: number | null;
+
+  @ManyToOne(() => Section, { nullable: true })
+  @JoinColumn({ name: 'section_id' })
+  section: Section | null;
 
   @ManyToMany(() => User)
   @JoinTable({

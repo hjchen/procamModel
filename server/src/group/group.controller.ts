@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Controller,
   Get,
   Post,
@@ -20,8 +21,39 @@ export class GroupController {
   constructor(private readonly groupService: GroupService) {}
 
   @Get()
+  async find(
+    @Query('sectionId') sectionId?: string,
+    @Query('departmentId') departmentId?: string,
+  ) {
+    if (sectionId !== undefined) {
+      const parsedSectionId = Number(sectionId);
+      if (!Number.isInteger(parsedSectionId) || parsedSectionId <= 0) {
+        throw new BadRequestException('sectionId 参数无效');
+      }
+      return this.groupService.findBySection(parsedSectionId);
+    }
+
+    if (departmentId !== undefined) {
+      const parsedDepartmentId = Number(departmentId);
+      if (!Number.isInteger(parsedDepartmentId) || parsedDepartmentId <= 0) {
+        throw new BadRequestException('departmentId 参数无效');
+      }
+      return this.groupService.findByDepartment(parsedDepartmentId);
+    }
+
+    throw new BadRequestException('请提供 sectionId 或 departmentId');
+  }
+
+  @Get('section/:sectionId')
+  async findBySection(
+    @Param('sectionId', ParseIntPipe) sectionId: number,
+  ) {
+    return this.groupService.findBySection(sectionId);
+  }
+
+  @Get('department/:departmentId')
   async findByDepartment(
-    @Query('departmentId', ParseIntPipe) departmentId: number,
+    @Param('departmentId', ParseIntPipe) departmentId: number,
   ) {
     return this.groupService.findByDepartment(departmentId);
   }
@@ -55,7 +87,8 @@ export class GroupController {
     createGroupDto: {
       name: string;
       description?: string;
-      departmentId: number;
+      sectionId?: number;
+      departmentId?: number;
     },
   ) {
     return this.groupService.create(createGroupDto);
@@ -68,6 +101,7 @@ export class GroupController {
     updateGroupDto: {
       name?: string;
       description?: string;
+      sectionId?: number;
     },
   ) {
     return this.groupService.update(id, updateGroupDto);
